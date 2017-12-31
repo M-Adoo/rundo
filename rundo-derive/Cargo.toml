@@ -1,0 +1,12 @@
+[package]
+name = "rundo-derive"
+version = "0.1.0"
+authors = ["Adoo <Adoo@outlook.com>"]
+
+[dependencies]
+types = {path = "../types"}
+syn = "*"
+quote = "*"
+
+[lib]
+proc-macro = true

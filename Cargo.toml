@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
 
 [dependencies]
+rundo-derive = { path="rundo-derive" }
+types = { path="types" }
+
+[workspace]
