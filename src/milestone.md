@@ -6,9 +6,10 @@
 - [x] auto record modify struct type
 - [x] custom derive
 - [ ] more effective string diff method.
-- [ ] track modify path
+- [x] track modify path
 - [ ] implement rundo trait
 - [ ] std::convert::AsRef
+- [ ] support struct attrs lifetime ...
 
 ## 0.2
 
