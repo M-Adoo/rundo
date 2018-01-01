@@ -1,10 +1,11 @@
+#![recursion_limit = "128"]
+
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
 extern crate syn;
 extern crate types;
 
-use std::convert::From;
 use proc_macro::TokenStream;
 
 #[proc_macro_derive(Rundo)]
@@ -54,20 +55,52 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
     let m_name = syn::Ident::from(m_name);
     let r_name = syn::Ident::from(r_name);
 
-    let tokens = quote! {
-           pub struct #m_name { #(#field_defines),* }
+    quote! {
+        use std::ops::{Deref, DerefMut};
+        use std::convert::From;
+        use std::vec;
 
-           pub type #r_name = OpType<#m_name>;
+        pub struct #m_name { #(#field_defines),* }
 
-           impl From<#name> for #r_name {
-                fn from(from: #name) -> Self {
-                    let v = #m_name {
-                        #(#fromed ,) *
-                    };
-                    OpType::from(v)
+        pub struct #r_name {
+            value: #m_name,
+            pub ops: Option<vec::Vec<Op>>,
+            dirty: bool,
+        }
+
+
+        impl Deref for #r_name {
+            type Target = #m_name;
+            fn deref(&self) -> &#m_name { &self.value }
+        }
+
+        impl DerefMut for #r_name {
+            fn deref_mut(&mut self) -> &mut #m_name {
+                  if !self.dirty {
+                    self.dirty = true;
+                }
+                &mut self.value
+            }
+        }
+
+        impl From<#name> for #r_name {
+            fn from(from: #name) -> Self {
+                let v = #m_name {
+                    #(#fromed ,) *
+                };
+
+                #r_name {
+                    dirty: false,
+                    value: v,
+                    ops: None,
                 }
             }
-    };
-    println!("{}", tokens);
-    tokens
+        }
+
+        impl Rundo for #r_name {
+            fn dirty(&self) -> bool{
+                self.dirty
+            }
+        }
+    }
 }
