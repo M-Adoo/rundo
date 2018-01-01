@@ -1,25 +1,37 @@
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
+use std::cmp::PartialEq;
+use super::Rundo;
 
 /// Value type like a memory rundo/redo type.
 /// Rundo will clone its origin value as a backup, so Clone must be implemented.
 /// **Be careful use it for struct or other big size type**,
 /// OpType is design for this scenario, or you must implment your custrom rundo type.
-pub struct ValueType<T: Clone> {
+pub struct ValueType<T>
+where
+    T: Clone + PartialEq,
+{
     value: T,
     origin: Option<T>,
 }
 
 /// impl Deref let ValueType<T> transparent to user access T value.
-impl<T: Clone> Deref for ValueType<T> {
+impl<T> Deref for ValueType<T>
+where
+    T: Clone + PartialEq,
+{
     type Target = T;
     fn deref(&self) -> &T {
+        println!("derefed vaule");
         &self.value
     }
 }
 
 /// when user try to get a mut refercence, Rundo it will change the value later.
-impl<T: Clone> DerefMut for ValueType<T> {
+impl<T> DerefMut for ValueType<T>
+where
+    T: Clone + PartialEq,
+{
     fn deref_mut(&mut self) -> &mut T {
         // when try to change the leaf value, ensure recorded origin value.
         if self.origin.is_none() {
@@ -29,11 +41,26 @@ impl<T: Clone> DerefMut for ValueType<T> {
     }
 }
 
-impl<T: Clone> From<T> for ValueType<T> {
+impl<T> From<T> for ValueType<T>
+where
+    T: Clone + PartialEq,
+{
     fn from(from: T) -> Self {
         ValueType {
             value: from,
             origin: None,
+        }
+    }
+}
+
+impl<T> Rundo for ValueType<T>
+where
+    T: Clone + PartialEq,
+{
+    fn dirty(&self) -> bool {
+        match self.origin {
+            Some(ref ori) => *ori == self.value,
+            None => false,
         }
     }
 }

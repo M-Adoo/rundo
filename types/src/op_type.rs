@@ -2,7 +2,7 @@ use std::vec;
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
 
-use super::Op;
+use super::{Op, Rundo};
 
 pub struct OpType<T> {
     dirty: bool,
@@ -35,6 +35,12 @@ impl<T> From<T> for OpType<T> {
             value: from,
             ops: None,
         };
+    }
+}
+
+default impl<T> Rundo for OpType<T> {
+     default fn dirty(&self) -> bool{
+        self.dirty
     }
 }
 
