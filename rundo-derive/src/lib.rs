@@ -19,6 +19,7 @@ pub fn rundo(input: TokenStream) -> TokenStream {
 
 fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
     let name = &ast.ident;
+    let sturct_vis = &ast.vis;
     let fields = match ast.body {
         syn::Body::Enum(_) => {
             panic!("#[derive(Rundo)] is only defined for structs, not for enums!");
@@ -37,7 +38,8 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         .map(|field| {
             let ident = field.ident.as_ref();
             let ty = &field.ty;
-            quote!{ #ident: ValueType<#ty> }
+            let vis = &field.vis;
+            quote!{ #vis #ident: ValueType<#ty> }
         })
         .collect::<Vec<_>>();
 
@@ -59,10 +61,11 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         use std::ops::{Deref, DerefMut};
         use std::convert::From;
         use std::vec;
+        use types::{ValueType, Rundo, Op};
 
         pub struct #m_name { #(#field_defines),* }
 
-        pub struct #r_name {
+       #sturct_vis struct #r_name {
             value: #m_name,
             pub ops: Option<vec::Vec<Op>>,
             dirty: bool,
