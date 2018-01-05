@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
 use std::cmp::PartialEq;
-use super::Rundo;
+use super::{Op, Rundo};
 
 /// Value type like a memory rundo/redo type.
 /// Rundo will clone its origin value as a backup, so Clone must be implemented.
@@ -59,12 +59,19 @@ where
 {
     fn dirty(&self) -> bool {
         match self.origin {
-            Some(ref ori) => *ori == self.value,
+            Some(ref ori) => *ori != self.value,
             None => false,
         }
     }
-}
 
+    fn reset(&mut self) {
+        self.origin = None;
+    }
+
+    fn change_ops(&self) -> Vec<Box<Op>> {
+        unimplemented!();
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -72,9 +79,15 @@ mod tests {
     #[test]
     fn number() {
         let mut leaf = ValueType::from(5);
+        assert!(!leaf.dirty());
+
         *leaf = 6;
         assert_eq!(leaf.value, 6);
         assert_eq!(leaf.origin, Some(5));
+        assert!(leaf.dirty());
+
+        leaf.reset();
+        assert!(!leaf.dirty());
     }
 
     #[test]

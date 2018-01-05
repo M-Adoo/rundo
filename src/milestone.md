@@ -9,9 +9,13 @@
 - [x] track modify path
 - [ ] implement rundo trait
 - [ ] std::convert::AsRef
-- [ ] support struct attrs lifetime ...
+- [x] visible key word.
+- [ ] serde
+- [ ] workspace
+- [ ] support struct in struct
 
 ## 0.2
 
+- [ ] support struct attrs lifetime ...
 - [ ] support ops zip
 - [ ] docs

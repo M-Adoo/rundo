@@ -67,7 +67,7 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
 
        #sturct_vis struct #r_name {
             value: #m_name,
-            pub ops: Option<vec::Vec<Op>>,
+            pub ops: Option<vec::Vec<Box<Op>>>,
             dirty: bool,
         }
 
@@ -103,6 +103,14 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         impl Rundo for #r_name {
             fn dirty(&self) -> bool{
                 self.dirty
+            }
+
+            fn reset(&mut self) {
+                self.dirty = false;
+            }
+
+            fn change_ops(&self)-> Vec<Box<Op>> {
+                unimplemented!();
             }
         }
     }
