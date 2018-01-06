@@ -56,4 +56,10 @@ fn test_pub_life() {
   assert_eq!(*cmplx.pub_field, 32.0);
   *cmplx.pub_field = 6.0;
   assert_eq!(*cmplx.pub_field, 6.0);
+
+  assert!(cmplx.dirty());
+
+  cmplx.reset();
+  assert!(!cmplx.dirty());
+  assert!(!cmplx.pub_field.dirty());
 }

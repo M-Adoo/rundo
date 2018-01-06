@@ -52,6 +52,14 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         })
         .collect::<Vec<_>>();
 
+    let reset = fields
+        .iter()
+        .map(|f| {
+            let ident = f.ident.as_ref();
+            quote! { self.value.#ident.reset()}
+        })
+        .collect::<Vec<_>>();
+
     let m_name = "M_".to_owned() + name.as_ref();
     let r_name = "R_".to_owned() + name.as_ref();
     let op_name = "Op".to_owned() + name.as_ref();
@@ -108,6 +116,7 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
 
             fn reset(&mut self) {
                 self.dirty = false;
+                #(#reset ;) *
             }
 
             fn change_ops(&self)-> Option<std::vec::Vec<#op_name>> {
