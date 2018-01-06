@@ -54,16 +54,19 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
 
     let m_name = "M_".to_owned() + name.as_ref();
     let r_name = "R_".to_owned() + name.as_ref();
+    let op_name = "Op".to_owned() + name.as_ref();
     let m_name = syn::Ident::from(m_name);
     let r_name = syn::Ident::from(r_name);
+    let op_name = syn::Ident::from(op_name);
 
     quote! {
-    
-        pub struct #m_name { #(#field_defines),* }
+        #sturct_vis struct #op_name;
 
-       #sturct_vis struct #r_name {
+        #sturct_vis struct #m_name { #(#field_defines),* }
+
+        #sturct_vis struct #r_name {
             value: #m_name,
-            pub ops: Option<std::vec::Vec<Box<Op>>>,
+            pub ops: Option<std::vec::Vec<#op_name>>,
             dirty: bool,
         }
 
@@ -96,6 +99,9 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         }
 
         impl Rundo for #r_name {
+
+            type Op = #op_name;
+
             fn dirty(&self) -> bool{
                 self.dirty
             }
@@ -104,7 +110,7 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
                 self.dirty = false;
             }
 
-            fn change_ops(&self)-> std::vec::Vec<Box<Op>> {
+            fn change_ops(&self)-> Option<std::vec::Vec<#op_name>> {
                 unimplemented!();
             }
         }

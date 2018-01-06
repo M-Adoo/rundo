@@ -1,7 +1,8 @@
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
 use std::cmp::PartialEq;
-use super::{Op, Rundo};
+use std::fmt::Debug;
+use super::Rundo;
 
 /// Value type like a memory rundo/redo type.
 /// Rundo will clone its origin value as a backup, so Clone must be implemented.
@@ -53,10 +54,18 @@ where
     }
 }
 
+#[derive(Debug)]
+pub struct VtOp<T> {
+    prev: T,
+    curr: T,
+}
+
 impl<T> Rundo for ValueType<T>
 where
     T: Clone + PartialEq,
 {
+    type Op = VtOp<T>;
+
     fn dirty(&self) -> bool {
         match self.origin {
             Some(ref ori) => *ori != self.value,
@@ -68,33 +77,58 @@ where
         self.origin = None;
     }
 
-    fn change_ops(&self) -> Vec<Box<Op>> {
-        unimplemented!();
+    fn change_ops(&self) -> Option<Vec<Self::Op>> {
+        match self.origin {
+            Some(ref ori) => Some(vec![
+                VtOp {
+                    prev: ori.clone(),
+                    curr: self.value.clone(),
+                },
+            ]),
+            None => None,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn number() {
-        let mut leaf = ValueType::from(5);
+
+    fn type_test<T>(init: T, new: T)
+    where
+        T: Clone + PartialEq + Debug,
+    {
+        let mut leaf = ValueType::<T>::from(init.clone());
         assert!(!leaf.dirty());
 
-        *leaf = 6;
-        assert_eq!(leaf.value, 6);
-        assert_eq!(leaf.origin, Some(5));
+        *leaf = new.clone();
+        assert_eq!(leaf.value, new.clone());
+        assert_eq!(leaf.origin, Some(init.clone()));
         assert!(leaf.dirty());
+
+        let mut ops = leaf.change_ops().unwrap();
+        assert_eq!(ops.len(), 1);
+        let op = ops.pop().unwrap();
+        assert_eq!(op.prev, init.clone());
+        assert_eq!(op.curr, new.clone());
 
         leaf.reset();
         assert!(!leaf.dirty());
+        //assert_eq!(leaf.change_ops(), None);
     }
 
     #[test]
-    fn string() {
-        let mut leaf = ValueType::from("hello world");
-        *leaf = "hello adoo!";
-        assert_eq!(leaf.value, "hello adoo!");
-        assert_eq!(leaf.origin, Some("hello world"));
+    fn test_i32() {
+        type_test(5, 6);
+    }
+
+    #[test]
+    fn test_f32() {
+        type_test(3.0, 2.0)
+    }
+
+    #[test]
+    fn test_string() {
+        type_test("hello world".to_owned(), "hello adoo".to_owned());
     }
 }

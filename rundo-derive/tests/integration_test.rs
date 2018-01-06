@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rundo_derive;
 extern crate types;
-use types::{Op, Rundo, ValueType};
+use types::{Rundo, ValueType};
 use rundo_derive::*;
 
 #[derive(Rundo)]
@@ -26,7 +26,7 @@ fn test_dirty() {
 
 mod wrap {
   use std;
-  use types::{Op, Rundo, ValueType};
+  use types::{Rundo, ValueType};
 
   #[derive(Rundo)]
   pub struct CmplxStruct {
