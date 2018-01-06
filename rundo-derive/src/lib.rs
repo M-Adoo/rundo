@@ -58,26 +58,21 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
     let r_name = syn::Ident::from(r_name);
 
     quote! {
-        use std::ops::{Deref, DerefMut};
-        use std::convert::From;
-        use std::vec;
-        use types::{ValueType, Rundo, Op};
-
+    
         pub struct #m_name { #(#field_defines),* }
 
        #sturct_vis struct #r_name {
             value: #m_name,
-            pub ops: Option<vec::Vec<Box<Op>>>,
+            pub ops: Option<std::vec::Vec<Box<Op>>>,
             dirty: bool,
         }
 
-
-        impl Deref for #r_name {
+        impl std::ops::Deref for #r_name {
             type Target = #m_name;
             fn deref(&self) -> &#m_name { &self.value }
         }
 
-        impl DerefMut for #r_name {
+        impl std::ops::DerefMut for #r_name {
             fn deref_mut(&mut self) -> &mut #m_name {
                   if !self.dirty {
                     self.dirty = true;
@@ -86,7 +81,7 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
             }
         }
 
-        impl From<#name> for #r_name {
+        impl std::convert::From<#name> for #r_name {
             fn from(from: #name) -> Self {
                 let v = #m_name {
                     #(#fromed ,) *
@@ -109,7 +104,7 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
                 self.dirty = false;
             }
 
-            fn change_ops(&self)-> Vec<Box<Op>> {
+            fn change_ops(&self)-> std::vec::Vec<Box<Op>> {
                 unimplemented!();
             }
         }
