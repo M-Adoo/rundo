@@ -43,6 +43,17 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         })
         .collect::<Vec<_>>();
 
+    let op_defineds = fields
+        .iter()
+        .map(|field| {
+            let ident = field.ident.as_ref();
+            let ty = &field.ty;
+            let op = quote! { <ValueType<#ty> as Rundo>::Op };
+            let ops_type = quote!{ Option<Vec<#op>>};
+            quote!{ #ident: #ops_type }
+        })
+        .collect::<Vec<_>>();
+
     let fromed = fields
         .iter()
         .map(|field| {
@@ -52,11 +63,16 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
         })
         .collect::<Vec<_>>();
 
-    let reset = fields
+    let fileds_ident = fields.iter().map(|f| f.ident.as_ref()).collect::<Vec<_>>();
+
+    let reset_method = fileds_ident
         .iter()
-        .map(|f| {
-            let ident = f.ident.as_ref();
-            quote! { self.value.#ident.reset()}
+        .map(|ident| quote! { self.value.#ident.reset()})
+        .collect::<Vec<_>>();
+    let ops_method = fileds_ident
+        .iter()
+        .map(|ident| {
+            quote! { #ident: self.value.#ident.change_ops() }
         })
         .collect::<Vec<_>>();
 
@@ -68,13 +84,12 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
     let op_name = syn::Ident::from(op_name);
 
     quote! {
-        #sturct_vis struct #op_name;
+        #sturct_vis struct #op_name { #(#op_defineds), * }
 
         #sturct_vis struct #m_name { #(#field_defines),* }
 
         #sturct_vis struct #r_name {
             value: #m_name,
-            pub ops: Option<std::vec::Vec<#op_name>>,
             dirty: bool,
         }
 
@@ -101,7 +116,6 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
                 #r_name {
                     dirty: false,
                     value: v,
-                    ops: None,
                 }
             }
         }
@@ -116,11 +130,14 @@ fn impl_rundo_derive(ast: &syn::DeriveInput) -> quote::Tokens {
 
             fn reset(&mut self) {
                 self.dirty = false;
-                #(#reset ;) *
+                #(#reset_method ;) *
             }
 
             fn change_ops(&self)-> Option<std::vec::Vec<#op_name>> {
-                unimplemented!();
+                match self.dirty {
+                    true => Some(vec![ #op_name { #(#ops_method) , *}]),
+                    false => None
+                }
             }
         }
     }

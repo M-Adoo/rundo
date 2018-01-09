@@ -11,7 +11,7 @@ struct Point {
 }
 
 #[test]
-fn test_dirty() {
+fn test_simple() {
   let mut pt = R_Point::from(Point { a: 1, b: 2 });
   assert_eq!(*pt.a, 1);
   assert!(!pt.dirty());
@@ -20,8 +20,14 @@ fn test_dirty() {
   assert!(pt.dirty());
   assert_eq!(*pt.a, 4);
 
+  let ops = pt.change_ops().unwrap();
+  assert_eq!(ops.len(), 1);
+
   pt.reset();
   assert!(!pt.dirty());
+
+  let ops = pt.change_ops();
+  assert!(ops.is_none());
 }
 
 mod wrap {
@@ -50,7 +56,7 @@ mod wrap {
 }
 
 #[test]
-fn test_pub_life() {
+fn test_visible() {
   use wrap::*;
   let mut cmplx = R_CmplxStruct::from(CmplxStruct::new(3, 32.0));
   assert_eq!(*cmplx.pub_field, 32.0);
