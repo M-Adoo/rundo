@@ -1,9 +1,10 @@
+#![feature(proc_macro)]
 #[macro_use]
-extern crate rundo_derive;
+extern crate attrs;
 extern crate types;
 
 pub use types::*;
-pub use rundo_derive::*;
+pub use attrs::*;
 
 pub enum ActionType {
     /// user action means, this action generate by explict called begin_action and end_action
@@ -57,15 +58,16 @@ impl<T: Rundo> Workspace<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use attrs::rundo;
 
-    #[derive(Rundo)]
+    #[rundo]
     struct Point {
         x: f32,
         y: f32,
     }
 
     fn workspace() {
-        let point = R_Point::from(Point { x: 1.0, y: 2.0 });
+        let point = Point::from(Point { x: 1.0, y: 2.0 });
         let ws = Workspace::new(point);
         let aa = ws.auto_action();
     }

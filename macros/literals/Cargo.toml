@@ -1,10 +1,9 @@
 [package]
-name = "rundo-derive"
+name = "literals"
 version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
 
 [dependencies]
-types = {path = "../types"}
 syn = "*"
 quote = "*"
 

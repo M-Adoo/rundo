@@ -1,10 +1,11 @@
-#[macro_use]
-extern crate rundo_derive;
+#![feature(proc_macro)]
+
+extern crate attrs;
 extern crate types;
 use types::{Rundo, ValueType};
-use rundo_derive::*;
+use attrs::rundo;
 
-#[derive(Rundo)]
+#[rundo]
 struct Point {
   a: i32,
   b: i32,
@@ -12,7 +13,7 @@ struct Point {
 
 #[test]
 fn test_simple() {
-  let mut pt = R_Point::from(Point { a: 1, b: 2 });
+  let mut pt = Point::from(Point { a: 1, b: 2 });
   assert_eq!(*pt.a, 1);
   assert!(!pt.dirty());
 
@@ -31,10 +32,9 @@ fn test_simple() {
 }
 
 mod wrap {
-  use std;
-  use types::{Rundo, ValueType};
+  use super::*;
 
-  #[derive(Rundo)]
+  #[rundo]
   pub struct CmplxStruct {
     private_field: i32,
     pub pub_field: f32,
@@ -49,7 +49,7 @@ mod wrap {
     }
   }
 
-  #[derive(Rundo)]
+  #[rundo]
   pub struct XXX {
     a: i32,
   }
@@ -58,7 +58,7 @@ mod wrap {
 #[test]
 fn test_visible() {
   use wrap::*;
-  let mut cmplx = R_CmplxStruct::from(CmplxStruct::new(3, 32.0));
+  let mut cmplx = CmplxStruct::from(CmplxStruct::new(3, 32.0));
   assert_eq!(*cmplx.pub_field, 32.0);
   *cmplx.pub_field = 6.0;
   assert_eq!(*cmplx.pub_field, 6.0);
