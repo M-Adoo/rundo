@@ -10,8 +10,8 @@
 - [ ] implement rundo trait
 - [ ] std::convert::AsRef
 - [x] visible key word.
-- [ ] use custom macro attrs replace derive
-- [ ] literal macro crate
+- [x] use custom macro attrs replace derive
+- [x] literal macro crate
 - [ ] serde
 - [ ] workspace
 - [ ] support struct in struct

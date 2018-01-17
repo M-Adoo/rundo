@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
 
 [dependencies]
-types = {path = "../types"}
+types = {path = "../../types"}
 syn = "*"
 quote = "*"
 

@@ -1,7 +1,9 @@
 #![feature(proc_macro)]
+#![feature(trace_macros)]
 
 extern crate attrs;
 extern crate types;
+
 use types::{Rundo, ValueType};
 use attrs::rundo;
 
@@ -13,7 +15,7 @@ struct Point {
 
 #[test]
 fn test_simple() {
-  let mut pt = Point::from(Point { a: 1, b: 2 });
+  let mut pt = Point! { a: 1, b: 2 };
   assert_eq!(*pt.a, 1);
   assert!(!pt.dirty());
 
@@ -42,23 +44,19 @@ mod wrap {
 
   impl CmplxStruct {
     pub fn new(private_field: i32, pub_field: f32) -> CmplxStruct {
-      CmplxStruct {
-        private_field,
-        pub_field,
+      // shorthand literal struct has break by rust bug #46489
+      CmplxStruct! {
+        private_field: private_field,
+        pub_field: pub_field
       }
     }
-  }
-
-  #[rundo]
-  pub struct XXX {
-    a: i32,
   }
 }
 
 #[test]
 fn test_visible() {
   use wrap::*;
-  let mut cmplx = CmplxStruct::from(CmplxStruct::new(3, 32.0));
+  let mut cmplx = CmplxStruct::new(3, 32.0);
   assert_eq!(*cmplx.pub_field, 32.0);
   *cmplx.pub_field = 6.0;
   assert_eq!(*cmplx.pub_field, 6.0);

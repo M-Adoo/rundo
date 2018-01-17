@@ -23,13 +23,13 @@ fn impl_rundo_attrs(ast: &syn::DeriveInput) -> quote::Tokens {
     let sturct_vis = &ast.vis;
     let fields = match ast.body {
         syn::Body::Enum(_) => {
-            panic!("#[derive(Rundo)] is only defined for structs, not for enums!");
+            panic!("#[rundo] is only defined for structs, not for enums!");
         }
         syn::Body::Struct(syn::VariantData::Tuple(_)) => {
-            panic!("#[derive(Rundo)] is only defined for structs, not for tuple!");
+            panic!("#[rundo] is only defined for structs, not for tuple!");
         }
         syn::Body::Struct(syn::VariantData::Unit) => {
-            panic!("#[derive(Rundo)] is only defined for structs, not for unit!");
+            panic!("#[rundo] is only defined for structs, not for unit!");
         }
         syn::Body::Struct(syn::VariantData::Struct(ref body)) => body.iter().collect::<Vec<_>>(),
     };
@@ -68,10 +68,9 @@ fn impl_rundo_attrs(ast: &syn::DeriveInput) -> quote::Tokens {
         })
         .collect::<Vec<_>>();
 
-    let m_name = "_".to_owned() + name.as_ref();
-    let op_name = "Op".to_owned() + name.as_ref();
-    let m_name = syn::Ident::from(m_name);
-    let op_name = syn::Ident::from(op_name);
+    let m_name = inner_name(name, "_");
+    let op_name = inner_name(name, "Op");
+    let literal_macro = impl_stcut_literal(&name, &fields);
 
     quote! {
         #sturct_vis struct #op_name { #(#op_defineds), * }
@@ -119,9 +118,55 @@ fn impl_rundo_attrs(ast: &syn::DeriveInput) -> quote::Tokens {
             }
         }
 
-        /// todo impl a literal macro
-        /// # example
-        /// #name! { field1: type value, ...}
+        #literal_macro
+    }
+}
 
+fn inner_name(name: &syn::Ident, prefix: &str) -> syn::Ident {
+    let in_name = prefix.to_owned() + name.as_ref();
+    syn::Ident::from(in_name)
+}
+
+fn impl_stcut_literal(name: &syn::Ident, fields: &std::vec::Vec<&syn::Field>) -> quote::Tokens {
+    let inner_type = inner_name(name, "_");
+    let field_match = fields.into_iter().map(|field| {
+        let ident = &field.ident;
+        let ty = &field.ty;
+        quote!{
+            // match shorthand literal field constuct like
+            // {a, b, c}
+            (#ident) => ( ValueType::<#ty>::from(#ident));
+            // normal struct literal field construtc like
+            // {a: 1, b: 1, c: 1}
+            (#ident : $e:tt) => ( ValueType::<#ty>::from($e));
+        }
+    });
+
+    let field_macro = inner_name(name, "_field");
+    let construct = |field_exp: &str| {
+        let field_exp = syn::Ident::from(field_exp);
+        quote! {
+            #name {
+                dirty: false,
+                value: #inner_type {
+                    $($id: #field_macro!(#field_exp)),*
+                }
+            }
+        }
+    };
+    let shorthand = construct("$id");
+    let normal = construct("$id: $e");
+
+    quote! {
+        macro_rules! #field_macro {
+            // field literal construct match
+            #(#field_match)*
+        }
+        macro_rules! #name {
+            ($($id: ident ,) *)  => { #shorthand };
+            ($($id: ident), *)  => { #shorthand };
+            ($($id: ident : $e: tt ,) *) => { #normal };
+            ($($id: ident : $e: tt ), *) => { #normal };
+        }
     }
 }
