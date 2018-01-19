@@ -67,7 +67,7 @@ mod test {
     }
 
     fn workspace() {
-        let point = Point::from(Point { x: 1.0, y: 2.0 });
+        let point = Point! { x: 1.0, y: 2.0 };
         let ws = Workspace::new(point);
         let aa = ws.auto_action();
     }
