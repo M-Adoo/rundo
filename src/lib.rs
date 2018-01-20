@@ -153,4 +153,22 @@ mod workspace {
         assert_eq!(ws.robot_ops_len(), 1);
         assert_eq!(ws.ops_len(), 2);
     }
+
+    #[test]
+    fn nest_batch() {
+        let ws = new_space();
+        {
+            let _guard = ws.capture_op();
+            {
+                let _guard = ws.capture_op();
+                *ws.borrow_mut().x = 5.0;
+                assert_eq!(ws.ops_len(), 0);
+            }
+
+            *ws.borrow_mut().x = 6.0;
+            assert_eq!(ws.ops_len(), 0);
+        }
+            assert_eq!(ws.ops_len(), 1);
+
+    }
 }
