@@ -2,6 +2,9 @@
 # example 
 
 ```rust
+#![feature(proc_macro)]
+#![feature(decl_macro)]
+
 use rundo::{Op, Rundo, ValueType};
 ```
 

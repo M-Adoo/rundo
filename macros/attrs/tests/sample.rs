@@ -1,5 +1,5 @@
 #![feature(proc_macro)]
-#![feature(trace_macros)]
+#![feature(decl_macro)]
 
 extern crate attrs;
 extern crate types;
@@ -10,4 +10,5 @@ use attrs::rundo;
 #[rundo]
 struct test {
     x: i32,
+    y: f32,
 }

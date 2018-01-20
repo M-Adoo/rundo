@@ -1,4 +1,6 @@
 #![feature(proc_macro)]
+#![feature(decl_macro)]
+
 #[macro_use]
 extern crate attrs;
 extern crate types;
