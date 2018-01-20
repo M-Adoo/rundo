@@ -19,17 +19,20 @@ fn test_simple() {
   assert_eq!(*pt.a, 1);
   assert!(!pt.dirty());
 
-  *pt.a = 4;
+  {
+    let mut a = &mut pt.a;
+  }
   assert!(pt.dirty());
+  *pt.a = 4;
   assert_eq!(*pt.a, 4);
 
-  let ops = pt.change_ops().unwrap();
-  assert_eq!(ops.len(), 1);
+
+  let ops = pt.change_op().expect("should have op here");
 
   pt.reset();
   assert!(!pt.dirty());
 
-  let ops = pt.change_ops();
+  let ops = pt.change_op();
   assert!(ops.is_none());
 }
 

@@ -85,9 +85,9 @@ impl RundoStruct for syn::ItemStruct {
                     #reset_impl
                 }
 
-                fn change_ops(&self)-> Option<std::vec::Vec<#op_name>> {
+                fn change_op(&self)-> Option<#op_name> {
                     match self.dirty {
-                        true => Some(vec![ #op_name { #ops_impl }]),
+                        true => {Some( #op_name { #ops_impl })},
                         false => None
                     }
                 }
@@ -150,7 +150,7 @@ impl RundoFields for syn::Fields {
             let ident = field.ident.as_ref();
             let ty = &field.ty;
             let op = quote! { <ValueType<#ty> as Rundo>::Op };
-            let ops_type = quote!{ Option<Vec<#op>>};
+            let ops_type = quote!{ Option<#op>};
             quote!{ #ident: #ops_type, }
         })
     }
@@ -158,7 +158,7 @@ impl RundoFields for syn::Fields {
     fn op_method(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = &field.ident;
-            quote! { #ident: self.value.#ident.change_ops(), }
+            quote! { #ident: self.value.#ident.change_op(), }
         })
     }
 

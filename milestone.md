@@ -14,6 +14,10 @@
 - [x] literal macro crate
 - [ ] serde
 - [ ] workspace
+    - [ ] support base undo redo
+    - [ ] auto batch op
+    - [ ] zip op
+- [ ] support skip special struct field
 - [ ] support struct in struct
 
 ## 0.2

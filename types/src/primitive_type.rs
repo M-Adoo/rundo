@@ -1,7 +1,9 @@
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
 use std::cmp::PartialEq;
+use std::convert::{ AsRef, AsMut };
 use std::fmt::Debug;
+
 use super::Rundo;
 
 /// Value type like a memory rundo/redo type.
@@ -60,6 +62,20 @@ pub struct VtOp<T> {
     curr: T,
 }
 
+impl<T> AsMut<T> for ValueType<T> 
+where T: 'static + Clone + PartialEq {
+    fn as_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+}
+
+impl<T> AsRef<T> for ValueType<T>
+ where T: 'static + Clone + PartialEq {
+     fn as_ref(&self) -> &T {
+         &self.value
+     }
+}
+
 impl<T> Rundo for ValueType<T>
 where
     T: Clone + PartialEq,
@@ -77,14 +93,14 @@ where
         self.origin = None;
     }
 
-    fn change_ops(&self) -> Option<Vec<Self::Op>> {
+    fn change_op(&self) -> Option<Self::Op> {
         match self.origin {
-            Some(ref ori) => Some(vec![
+            Some(ref ori) => Some(
                 VtOp {
                     prev: ori.clone(),
                     curr: self.value.clone(),
                 },
-            ]),
+            ),
             None => None,
         }
     }
@@ -106,15 +122,13 @@ mod tests {
         assert_eq!(leaf.origin, Some(init.clone()));
         assert!(leaf.dirty());
 
-        let mut ops = leaf.change_ops().unwrap();
-        assert_eq!(ops.len(), 1);
-        let op = ops.pop().unwrap();
+        let mut op = leaf.change_op().expect("should have op here");
         assert_eq!(op.prev, init.clone());
         assert_eq!(op.curr, new.clone());
 
         leaf.reset();
         assert!(!leaf.dirty());
-        //assert_eq!(leaf.change_ops(), None);
+        //assert_eq!(leaf.change_op(), None);
     }
 
     #[test]
