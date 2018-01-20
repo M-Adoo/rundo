@@ -4,12 +4,12 @@
 extern crate attrs;
 extern crate types;
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 pub use types::*;
 pub use attrs::*;
 
 
-pub enum OpType {
+enum OpType {
     /// user Op means, user manaual called capture_op on workspace,
     /// and this Op record all the changed between the OpGuard lifetime
     UserOp,
@@ -38,18 +38,13 @@ impl<'a, T> Drop for OpGuard<'a, T> where T: 'static + Rundo  {
     }
 }
 
+
 /// Workspace is the data store in rundo.
 pub struct Workspace<T: Rundo + 'static> {
     root: RefCell<T>,
     stack: RefCell<Vec<(OpType, T::Op)>>,
     user_ops_len: RefCell<usize>,
     batch: RefCell<i32>,
-}
-
-impl<T:Rundo + 'static> AsMut<T> for Workspace<T> {
-    fn as_mut(&mut self) -> &mut T {
-        self.root.get_mut()
-    }
 }
 
 const STACK_DEFAULT_SIZE: usize = 128;
@@ -62,6 +57,14 @@ impl<T: Rundo> Workspace<T> {
             user_ops_len: RefCell::new(0),
             batch: RefCell::new(0),
         };
+    }
+
+    pub fn borrow_mut(&self) -> RefMut<T> {
+        self.root.borrow_mut()
+    }
+
+    pub fn borrow(&self) -> Ref<T> {
+        self.root.borrow()
     }
 
     pub fn capture_op(&self) -> OpGuard<T> {
@@ -131,13 +134,14 @@ mod workspace {
 
     #[test]
     fn stack_len() {
-        let mut ws = new_space();
+        let ws = new_space();
 
         {
-            let root = &mut ws.root.borrow_mut();
-            let x = &mut root.x;
-            **x = 5.0;
+            let mut root = ws.borrow_mut();
+            let x = root.x.as_mut();
+            *x = 5.0;
         }
+
         action_modify(&ws, 1.0, 2.0);
 
         assert_eq!(ws.stack.borrow().len(), 2);

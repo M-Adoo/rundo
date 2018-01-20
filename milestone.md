@@ -8,7 +8,7 @@
 - [ ] more effective string diff method.
 - [x] track modify path
 - [ ] implement rundo trait
-- [ ] std::convert::AsRef
+- [x] std::convert::AsRef
 - [x] visible key word.
 - [x] use custom macro attrs replace derive
 - [x] literal macro crate
