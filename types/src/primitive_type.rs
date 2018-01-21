@@ -78,7 +78,7 @@ impl<T> AsRef<T> for ValueType<T>
 
 impl<T> Rundo for ValueType<T>
 where
-    T: Clone + PartialEq,
+    T: Clone + PartialEq + Debug,
 {
     type Op = VtOp<T>;
 
@@ -104,6 +104,18 @@ where
             None => None,
         }
     }
+
+    fn back(&mut self, op: &Self::Op) {
+        debug_assert_eq!(self.value, op.curr);
+        self.value = op.prev.clone();
+        self.reset();
+    }
+
+    fn forward(&mut self, op: &Self::Op) {
+        debug_assert_eq!(op.prev, self.value);
+        self.value = op.curr.clone();
+        self.reset();
+    }
 }
 
 #[cfg(test)]
@@ -122,13 +134,24 @@ mod tests {
         assert_eq!(leaf.origin, Some(init.clone()));
         assert!(leaf.dirty());
 
-        let mut op = leaf.change_op().expect("should have op here");
+        let op = leaf.change_op().expect("should have op here");
         assert_eq!(op.prev, init.clone());
         assert_eq!(op.curr, new.clone());
 
         leaf.reset();
         assert!(!leaf.dirty());
-        //assert_eq!(leaf.change_op(), None);
+        assert!(leaf.change_op().is_none());
+        
+        // test back forward
+        *leaf = new.clone();
+        leaf.back(&op);
+        assert_eq!(leaf.value, init.clone());
+        assert!(!leaf.dirty());
+
+        assert_eq!(leaf.value, init.clone());
+        leaf.forward(&op);
+        assert_eq!(leaf.value, new.clone());
+        assert!(!leaf.dirty());
     }
 
     #[test]

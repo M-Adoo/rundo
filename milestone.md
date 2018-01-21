@@ -8,7 +8,7 @@
 - [x] travis
 - [ ] more effective string diff method.
 - [x] track modify path
-- [ ] implement rundo trait
+- [x] implement rundo trait
 - [x] std::convert::AsRef
 - [x] visible key word.
 - [x] use custom macro attrs replace derive
@@ -17,11 +17,15 @@
     - [ ] support base undo redo
     - [x] auto batch op
     - [ ] zip op
+    - [x] halfway rollback
 
 ## 0.2
 
 - [ ] support skip special struct field
 - [ ] support struct in struct
+    - [ ] if user directly replace the nested struct, dirty chain will break, and how to generate current change op?
+    - [ ] RefCell will break dirty chain which depend on DerefMut
+- [ ] support rebase
 - [ ] support generic
 - [ ] support struct attrs lifetime ...
 - [ ] support ops zip

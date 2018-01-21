@@ -71,6 +71,8 @@ impl RundoStruct for syn::ItemStruct {
         let op_name = &self.op_name();
         let reset_impl = self.fields.reset_method();
         let ops_impl = self.fields.op_method();
+        let back_impl = self.fields.back_method();
+        let forward_impl = self.fields.forward_method();
         quote! {
              impl Rundo for #name {
 
@@ -90,6 +92,14 @@ impl RundoStruct for syn::ItemStruct {
                         true => {Some( #op_name { #ops_impl })},
                         false => None
                     }
+                }
+
+                fn back(&mut self, op: &Self::Op) {
+                    #back_impl;
+                }
+
+                fn forward(&mut self, op: &Self::Op) {
+                    #forward_impl
                 }
             }
         }
@@ -133,6 +143,8 @@ trait RundoFields {
     fn op_def(&self) -> quote::Tokens;
     fn op_method(&self) -> quote::Tokens;
     fn reset_method(&self) -> quote::Tokens;
+    fn back_method(&self) -> quote::Tokens;
+    fn forward_method(&self) -> quote::Tokens;
 }
 
 impl RundoFields for syn::Fields {
@@ -167,5 +179,29 @@ impl RundoFields for syn::Fields {
             let ident = &field.ident;
             quote! { self.value.#ident.reset();}
         })
+    }
+
+    fn back_method(&self) -> quote::Tokens {
+        fields_map(self, |field| {
+            let ident = &field.ident;
+            quote! { 
+                if let Some(ref op) = op.#ident {
+                    self.value.#ident.back(&op);
+                }
+                self.dirty = false;
+            }
+        })   
+    }
+
+     fn forward_method(&self) -> quote::Tokens {
+        fields_map(self, |field| {
+            let ident = &field.ident;
+            quote! { 
+                if let Some(ref op) = op.#ident {
+                    self.value.#ident.forward(&op); 
+                }
+                self.dirty = false;
+            }
+        })   
     }
 }

@@ -16,4 +16,8 @@ pub trait Rundo {
     /// Reset the node change state which mean changes has been record by workspace,
     /// or changes will be ignore.
     fn reset(&mut self);
+    /// Use an Op and back to the previous data status
+    fn back(&mut self, op: &Self::Op);
+    /// Go to the next version of the data should be with a Op.
+    fn forward(&mut self, op: &Self::Op);
 }
