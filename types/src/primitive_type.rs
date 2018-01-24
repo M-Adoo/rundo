@@ -75,9 +75,26 @@ impl<T> AsRef<T> for ValueType<T>
      }
 }
 
+pub trait Primitive {}
+
+impl Primitive  for bool {}
+impl Primitive  for char {}
+impl Primitive  for i8 {}
+impl Primitive  for u8 {}
+impl Primitive  for i16 {}
+impl Primitive  for u16 {}
+impl Primitive  for i32 {}
+impl Primitive  for u32 {}
+impl Primitive  for i64 {}
+impl Primitive  for u64 {}
+impl Primitive  for f32 {}
+impl Primitive  for f64 {}
+impl Primitive  for isize {}
+impl Primitive  for usize {}
+
 impl<T> Rundo for ValueType<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: Clone + PartialEq + Debug + Primitive,
 {
     type Op = VtOp<T>;
 
@@ -121,50 +138,51 @@ where
 mod tests {
     use super::*;
 
-    fn type_test<T>(init: T, new: T)
-    where
-        T: Clone + PartialEq + Debug,
-    {
-        let mut leaf = ValueType::<T>::from(init.clone());
-        assert!(!leaf.dirty());
+    macro_rules! type_test {
+        ($init: expr, $new:expr) => {
+            {
+                let mut leaf = ValueType::from($init.clone());
+                assert!(!leaf.dirty());
 
-        *leaf = new.clone();
-        assert_eq!(leaf.value, new.clone());
-        assert_eq!(leaf.origin, Some(init.clone()));
-        assert!(leaf.dirty());
+                *leaf = $new.clone();
+                assert_eq!(leaf.value, $new.clone());
+                assert_eq!(leaf.origin, Some($init.clone()));
+                assert!(leaf.dirty());
 
-        let op = leaf.change_op().expect("should have op here");
-        assert_eq!(op.prev, init.clone());
-        assert_eq!(op.curr, new.clone());
+                let op = leaf.change_op().expect("should have op here");
+                assert_eq!(op.prev, $init.clone());
+                assert_eq!(op.curr, $new.clone());
 
-        leaf.reset();
-        assert!(!leaf.dirty());
-        assert!(leaf.change_op().is_none());
-        
-        // test back forward
-        *leaf = new.clone();
-        leaf.back(&op);
-        assert_eq!(leaf.value, init.clone());
-        assert!(!leaf.dirty());
+                leaf.reset();
+                assert!(!leaf.dirty());
+                assert!(leaf.change_op().is_none());
+                
+                // test back forward
+                *leaf = $new.clone();
+                leaf.back(&op);
+                assert_eq!(leaf.value, $init.clone());
+                assert!(!leaf.dirty());
 
-        assert_eq!(leaf.value, init.clone());
-        leaf.forward(&op);
-        assert_eq!(leaf.value, new.clone());
-        assert!(!leaf.dirty());
+                assert_eq!(leaf.value, $init.clone());
+                leaf.forward(&op);
+                assert_eq!(leaf.value, $new.clone());
+                assert!(!leaf.dirty());
+            }
+        }
     }
 
     #[test]
-    fn test_i32() {
-        type_test(5, 6);
+    fn i32() {
+        type_test!(5, 6);
     }
 
     #[test]
-    fn test_f32() {
-        type_test(3.0, 2.0)
+    fn f32() {
+        type_test!(3.0, 2.0);
     }
 
     #[test]
-    fn test_string() {
-        type_test("hello world".to_owned(), "hello adoo".to_owned());
+    fn i8() {
+        type_test!(1i8, 2i8)
     }
 }

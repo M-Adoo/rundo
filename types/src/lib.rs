@@ -1,8 +1,10 @@
 #![feature(specialization)]
 
 mod primitive_type;
+mod string_type;
 
 pub use primitive_type::*;
+pub use string_type::*;
 
 /// Every rundo node must implement Rundo trait to support undo/redo.
 /// In most of case, you can derive Rundo,

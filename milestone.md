@@ -13,21 +13,20 @@
 - [x] visible key word.
 - [x] use custom macro attrs replace derive
 - [x] literal macro crate
-- [ ] workspace
-    - [ ] support base undo redo
+- [x] workspace
+    - [x] support base undo redo
     - [x] auto batch op
-    - [ ] zip op
     - [x] halfway rollback
 
 ## 0.2
 
 - [ ] support skip special struct field
+- [ ] support generic
+- [ ] support struct attrs lifetime ...
 - [ ] support struct in struct
     - [ ] if user directly replace the nested struct, dirty chain will break, and how to generate current change op?
     - [ ] RefCell will break dirty chain which depend on DerefMut
 - [ ] support rebase
-- [ ] support generic
-- [ ] support struct attrs lifetime ...
 - [ ] support ops zip
 - [ ] docs
 - [ ] serde
