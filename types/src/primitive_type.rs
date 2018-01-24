@@ -6,7 +6,7 @@ use std::fmt::Debug;
 
 use super::Rundo;
 
-/// Value type like a memory rundo/redo type.
+/// Value type like a memory undo/redo type.
 /// Rundo will clone its origin value as a backup, so Clone must be implemented.
 /// **Be careful use it for struct or other big size type**,
 /// OpType is design for this scenario, or you must implment your custrom rundo type.
@@ -25,7 +25,6 @@ where
 {
     type Target = T;
     fn deref(&self) -> &T {
-        println!("derefed vaule");
         &self.value
     }
 }

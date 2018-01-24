@@ -1,8 +1,6 @@
 use quote;
 use syn;
 
-use literal;
-
 pub fn prefix_ident(ident: &syn::Ident, prefix: &str) -> syn::Ident {
     let in_name = prefix.to_owned() + ident.as_ref();
     syn::Ident::from(in_name)
@@ -63,7 +61,12 @@ impl RundoStruct for syn::ItemStruct {
         let vis = &self.vis;
         let name = self.op_name();
         let ops_def = self.fields.op_def();
-        quote! { #vis struct #name { #ops_def } }
+        quote! { 
+            #[derive(Debug)]
+            #vis struct #name {
+                 #ops_def 
+            } 
+        }
     }
 
     fn impl_rundo(&self) -> quote::Tokens {

@@ -7,8 +7,8 @@ pub use primitive_type::*;
 /// Every rundo node must implement Rundo trait to support undo/redo.
 /// In most of case, you can derive Rundo,
 /// of course, you can implement it by yourself.
-pub trait Rundo {
-    type Op;
+pub trait Rundo  {
+    type Op: std::fmt::Debug;
     /// if this node has been changed between from the last step to current.
     fn dirty(&self) -> bool;
     /// Use Op to describe the change infos.
