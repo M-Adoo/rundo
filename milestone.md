@@ -7,6 +7,8 @@
 - [x] custom derive
 - [x] travis
 - [ ] more effective string diff method.
+    - [x] diff ops
+    - [ ] undo/redo
 - [x] track modify path，
 - [x] implement rundo trait
 - [x] std::convert::AsRef

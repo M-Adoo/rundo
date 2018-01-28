@@ -1,4 +1,4 @@
-#![feature(specialization)]
+extern crate difference;
 
 mod primitive_type;
 mod string_type;

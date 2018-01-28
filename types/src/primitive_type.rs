@@ -14,8 +14,8 @@ pub struct ValueType<T>
 where
     T: Clone + PartialEq,
 {
-    value: T,
-    origin: Option<T>,
+    pub(crate) value: T,
+    pub(crate) origin: Option<T>,
 }
 
 /// impl Deref let ValueType<T> transparent to user access T value.

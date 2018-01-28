@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
 
 [dependencies]
+difference = "2.0"
