@@ -20,14 +20,13 @@ fn test_simple() {
   assert!(!pt.dirty());
 
   {
-    let a = &mut pt.a;
+    let _a = &mut pt.a;
   }
   assert!(pt.dirty());
   *pt.a = 4;
   assert_eq!(*pt.a, 4);
 
-
-  let ops = pt.change_op().expect("should have op here");
+  pt.change_op().expect("should have op here");
 
   pt.reset();
   assert!(!pt.dirty());
@@ -36,28 +35,27 @@ fn test_simple() {
   assert!(ops.is_none());
 }
 
-
 #[test]
 fn forward_back() {
-    let mut pt = Point! { a: 1, b: 2 };
-    *pt.a = 5;
-    *pt.b = 6;
+  let mut pt = Point! { a: 1, b: 2 };
+  *pt.a = 5;
+  *pt.b = 6;
 
-    assert_eq!(*pt.a, 5);
-    assert_eq!(*pt.b, 6);
+  assert_eq!(*pt.a, 5);
+  assert_eq!(*pt.b, 6);
 
-    let op = pt.change_op().expect("should has op here");
-    *pt.a = 5;
-    pt.back(&op);
-    assert_eq!(*pt.a, 1);
-    assert_eq!(*pt.b, 2);
-    assert!(!pt.dirty());
+  let op = pt.change_op().expect("should has op here");
+  *pt.a = 5;
+  pt.back(&op);
+  assert_eq!(*pt.a, 1);
+  assert_eq!(*pt.b, 2);
+  assert!(!pt.dirty());
 
-    *pt.a = 1;
-    pt.forward(&op);
-    assert_eq!(*pt.a, 5);
-    assert_eq!(*pt.b, 6);
-    assert!(!pt.dirty());
+  *pt.a = 1;
+  pt.forward(&op);
+  assert_eq!(*pt.a, 5);
+  assert_eq!(*pt.b, 6);
+  assert!(!pt.dirty());
 }
 
 mod wrap {

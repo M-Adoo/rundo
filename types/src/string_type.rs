@@ -40,13 +40,14 @@ impl Rundo for ValueType<String> {
         let mut base = 0;
         let mut rem_diff = false;
         for diff in diffs {
+          let is_rem_diff = std::mem::discriminant(&diff)
+            == std::mem::discriminant(&Difference::Rem("".to_string()));
           match diff {
             Difference::Same(text) => base += text.len(),
             Difference::Rem(text) => {
               let idx = base;
               base += text.len();
               ops.push(StrOP::Del { idx, value: text });
-              rem_diff = true;
             }
             Difference::Add(ref text) if rem_diff => {
               if let Some(StrOP::Del { idx, value }) = ops.pop() {
@@ -66,7 +67,7 @@ impl Rundo for ValueType<String> {
               });
             }
           };
-          rem_diff = false;
+          rem_diff = is_rem_diff;
         }
         return ops;
       })

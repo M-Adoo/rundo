@@ -2,11 +2,11 @@
 mod test {
     #![feature(proc_macro)]
     #![feature(decl_macro)]
-    
+
     use std;
     use types::*;
     use attrs::rundo;
-    use Workspace;
+    use workspace::Workspace;
 
     #[rundo]
     struct Point {
@@ -15,11 +15,11 @@ mod test {
     }
 
     type Space = Workspace<Point>;
-    fn new_space() -> Space  {
+    fn new_space() -> Space {
         Workspace::new(Point! { x: 0.0, y: 0.0 })
     }
 
-    fn action_modify(space: & Space, x: f32, y: f32)-> & Space {
+    fn action_modify(space: &Space, x: f32, y: f32) -> &Space {
         let _guard = space.capture_op();
         *space.root.borrow_mut().x = x;
         *space.root.borrow_mut().y = y;
@@ -82,7 +82,7 @@ mod test {
             ws.rollback();
             assert!(!ws.borrow_data().dirty());
         }
-        
+
         assert_eq!(*ws.borrow_data().x, 5.0);
         assert_eq!(ws.ops_len(), 1);
     }
@@ -128,7 +128,7 @@ mod test {
         action_modify(&ws, 1.0, 1.0);
         assert_eq!(ws.ops_len(), 1);
         assert_eq!(ws.robot_ops_len(), 0);
-        
+
         action_modify(&ws, 2.0, 2.0);
         assert_eq!(ws.ops_len(), 2);
         assert_eq!(*ws.borrow_data().y, 2.0);
