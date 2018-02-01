@@ -17,13 +17,22 @@ impl LiteralMacro for syn::ItemStruct {
         let field_match = rundo_struct::fields_map(&self.fields, |field| {
             let ident = &field.ident;
             let ty = &field.ty;
+            let init_field = |init_expr| {
+                if rundo_struct::default_ty_impled(ty) {
+                    quote!{ValueType::<#ty>::from(#init_expr)}
+                } else {
+                    quote!{#init_expr}
+                }
+            };
+            let shorthand = init_field(quote!{#ident});
+            let normal = init_field(quote!{$e});
             quote!{
                 // match shorthand literal field constuct like
                 // {a, b, c}
-                (#ident) => ( ValueType::<#ty>::from(#ident));
+                (#ident) => ( #shorthand);
                 // normal struct literal field construtc like
                 // {a: 1, b: 1, c: 1}
-                (#ident : $e:tt) => ( ValueType::<#ty>::from($e));
+                (#ident : $e:expr) => ( #normal);
             }
         });
 
@@ -51,8 +60,8 @@ impl LiteralMacro for syn::ItemStruct {
             macro_rules! #name {
                 ($($id: ident ,) *)  => { #shorthand };
                 ($($id: ident), *)  => { #shorthand };
-                ($($id: ident : $e: tt ,) *) => { #normal };
-                ($($id: ident : $e: tt ), *) => { #normal };
+                ($($id: ident : $e: expr ,) *) => { #normal };
+                ($($id: ident : $e: expr ), *) => { #normal };
             }
         }
     }

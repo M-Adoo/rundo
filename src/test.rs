@@ -4,7 +4,7 @@ mod test {
     #![feature(decl_macro)]
 
     use std;
-    use types::*;
+    use types::prelude::*;
     use attrs::rundo;
     use workspace::Workspace;
 

@@ -8,7 +8,9 @@ pub mod workspace;
 mod test;
 
 pub mod prelude {
-    pub use types::*;
     pub use attrs::*;
     pub use workspace;
+    pub use types::prelude;
 }
+
+pub use types::Rundo;

@@ -1,20 +1,10 @@
 use quote;
 use syn;
+use types::IMPLED_RUNDO;
 
 pub fn prefix_ident(ident: &syn::Ident, prefix: &str) -> syn::Ident {
     let in_name = prefix.to_owned() + ident.as_ref();
     syn::Ident::from(in_name)
-}
-
-// fields
-macro_rules! named_filed_only {
-    ($ident:expr) => {
-         match $ident {
-            &syn::Fields::Named(ref fs) => fs,
-            &syn::Fields::Unnamed(_) => panic!("rundo not support tuple struct now"),
-            &syn::Fields::Unit =>panic!("rundo not support unit struct now"),
-        };
-    };
 }
 
 pub trait RundoStruct {
@@ -61,11 +51,11 @@ impl RundoStruct for syn::ItemStruct {
         let vis = &self.vis;
         let name = self.op_name();
         let ops_def = self.fields.op_def();
-        quote! { 
+        quote! {
             #[derive(Debug)]
             #vis struct #name {
-                 #ops_def 
-            } 
+                 #ops_def
+            }
         }
     }
 
@@ -129,6 +119,17 @@ impl RundoStruct for syn::ItemStruct {
     }
 }
 
+// fields
+macro_rules! named_filed_only {
+    ($ident:expr) => {
+         match $ident {
+            &syn::Fields::Named(ref fs) => fs,
+            &syn::Fields::Unnamed(_) => panic!("rundo not support tuple struct now"),
+            &syn::Fields::Unit =>panic!("rundo not support unit struct now"),
+        };
+    };
+}
+
 pub fn fields_map<F>(fields: &syn::Fields, field_to_token: F) -> quote::Tokens
 where
     F: FnMut(&syn::Field) -> quote::Tokens,
@@ -150,13 +151,32 @@ trait RundoFields {
     fn forward_method(&self) -> quote::Tokens;
 }
 
+pub fn default_ty_impled(ty: &syn::Type) -> bool {
+    if let &syn::Type::Path(syn::TypePath { ref path, .. }) = ty {
+        path.segments.last().map_or(false, |pair| {
+            let tt_id = pair.value().ident.as_ref();
+            IMPLED_RUNDO.iter().any(|t| t == &tt_id)
+        })
+    } else {
+        false
+    }
+}
+
+fn rundo_type_def(ty: &syn::Type) -> quote::Tokens {
+    if default_ty_impled(ty) {
+        quote!{ValueType<#ty>}
+    } else {
+        quote!{#ty}
+    }
+}
+
 impl RundoFields for syn::Fields {
     fn fields_def(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = field.ident.as_ref();
-            let ty = &field.ty;
+            let ty = rundo_type_def(&field.ty);
             let vis = &field.vis;
-            quote!{ #vis #ident: ValueType<#ty>, }
+            quote!{ #vis #ident: #ty, }
         })
     }
 
@@ -164,7 +184,8 @@ impl RundoFields for syn::Fields {
         fields_map(self, |field| {
             let ident = field.ident.as_ref();
             let ty = &field.ty;
-            let op = quote! { <ValueType<#ty> as Rundo>::Op };
+            let ty = rundo_type_def(&field.ty);
+            let op = quote! { <#ty as Rundo>::Op };
             let ops_type = quote!{ Option<#op>};
             quote!{ #ident: #ops_type, }
         })
@@ -187,24 +208,24 @@ impl RundoFields for syn::Fields {
     fn back_method(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = &field.ident;
-            quote! { 
+            quote! {
                 if let Some(ref op) = op.#ident {
                     self.value.#ident.back(&op);
                 }
                 self.dirty = false;
             }
-        })   
+        })
     }
 
-     fn forward_method(&self) -> quote::Tokens {
+    fn forward_method(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = &field.ident;
-            quote! { 
+            quote! {
                 if let Some(ref op) = op.#ident {
-                    self.value.#ident.forward(&op); 
+                    self.value.#ident.forward(&op);
                 }
                 self.dirty = false;
             }
-        })   
+        })
     }
 }

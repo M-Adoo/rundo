@@ -4,7 +4,7 @@
 extern crate attrs;
 extern crate types;
 
-use types::{Rundo, ValueType};
+use types::prelude::*;
 use attrs::rundo;
 
 #[rundo]
