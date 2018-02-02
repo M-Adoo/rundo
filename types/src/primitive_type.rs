@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 use std::convert::From;
 use std::cmp::PartialEq;
-use std::convert::{ AsRef, AsMut };
+use std::convert::{AsMut, AsRef};
 use std::fmt::Debug;
 
 use super::Rundo;
@@ -61,36 +61,40 @@ pub struct VtOp<T> {
     curr: T,
 }
 
-impl<T> AsMut<T> for ValueType<T> 
-where T: 'static + Clone + PartialEq {
+impl<T> AsMut<T> for ValueType<T>
+where
+    T: 'static + Clone + PartialEq,
+{
     fn as_mut(&mut self) -> &mut T {
         &mut self.value
     }
 }
 
 impl<T> AsRef<T> for ValueType<T>
- where T: 'static + Clone + PartialEq {
-     fn as_ref(&self) -> &T {
-         &self.value
-     }
+where
+    T: 'static + Clone + PartialEq,
+{
+    fn as_ref(&self) -> &T {
+        &self.value
+    }
 }
 
 pub trait Primitive {}
 
-impl Primitive  for bool {}
-impl Primitive  for char {}
-impl Primitive  for i8 {}
-impl Primitive  for u8 {}
-impl Primitive  for i16 {}
-impl Primitive  for u16 {}
-impl Primitive  for i32 {}
-impl Primitive  for u32 {}
-impl Primitive  for i64 {}
-impl Primitive  for u64 {}
-impl Primitive  for f32 {}
-impl Primitive  for f64 {}
-impl Primitive  for isize {}
-impl Primitive  for usize {}
+impl Primitive for bool {}
+impl Primitive for char {}
+impl Primitive for i8 {}
+impl Primitive for u8 {}
+impl Primitive for i16 {}
+impl Primitive for u16 {}
+impl Primitive for i32 {}
+impl Primitive for u32 {}
+impl Primitive for i64 {}
+impl Primitive for u64 {}
+impl Primitive for f32 {}
+impl Primitive for f64 {}
+impl Primitive for isize {}
+impl Primitive for usize {}
 
 impl<T> Rundo for ValueType<T>
 where
@@ -111,12 +115,10 @@ where
 
     fn change_op(&self) -> Option<Self::Op> {
         match self.origin {
-            Some(ref ori) => Some(
-                VtOp {
-                    prev: ori.clone(),
-                    curr: self.value.clone(),
-                },
-            ),
+            Some(ref ori) => Some(VtOp {
+                prev: ori.clone(),
+                curr: self.value.clone(),
+            }),
             None => None,
         }
     }
@@ -156,7 +158,7 @@ mod tests {
                 leaf.reset();
                 assert!(!leaf.dirty());
                 assert!(leaf.change_op().is_none());
-                
+
                 // test back forward
                 *leaf = $new.clone();
                 leaf.back(&op);
