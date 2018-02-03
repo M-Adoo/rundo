@@ -8,20 +8,13 @@ pub fn prefix_ident(ident: &syn::Ident, prefix: &str) -> syn::Ident {
 }
 
 pub trait RundoStruct {
-    fn inner_name(&self) -> syn::Ident;
     fn op_name(&self) -> syn::Ident;
     fn struct_def(&self) -> quote::Tokens;
-    fn inner_struct_def(&self) -> quote::Tokens;
     fn op_struct_def(&self) -> quote::Tokens;
     fn impl_rundo(&self) -> quote::Tokens;
-    fn impl_ref_deref(&self) -> quote::Tokens;
 }
 
 impl RundoStruct for syn::ItemStruct {
-    fn inner_name(&self) -> syn::Ident {
-        prefix_ident(&self.ident, "_")
-    }
-
     fn op_name(&self) -> syn::Ident {
         prefix_ident(&self.ident, "Op")
     }
@@ -29,20 +22,8 @@ impl RundoStruct for syn::ItemStruct {
     fn struct_def(&self) -> quote::Tokens {
         let vis = &self.vis;
         let name = &self.ident;
-        let inner_name = self.inner_name();
-        quote! {
-                #vis struct #name {
-                value: #inner_name,
-                dirty: bool,
-            }
-        }
-    }
-
-    fn inner_struct_def(&self) -> quote::Tokens {
-        let vis = &self.vis;
-        let name = self.inner_name();
         let fields_def = self.fields.fields_def();
-        quote!{
+        quote! {
             #vis struct #name { #fields_def }
         }
     }
@@ -66,22 +47,22 @@ impl RundoStruct for syn::ItemStruct {
         let ops_impl = self.fields.op_method();
         let back_impl = self.fields.back_method();
         let forward_impl = self.fields.forward_method();
+        let dirty_method = self.fields.dirty_method();
         quote! {
              impl Rundo for #name {
 
                 type Op = #op_name;
 
-                fn dirty(&self) -> bool{
-                    self.dirty
+                fn dirty(&self) -> bool {
+                    #dirty_method
                 }
 
                 fn reset(&mut self) {
-                    self.dirty = false;
                     #reset_impl
                 }
 
                 fn change_op(&self)-> Option<#op_name> {
-                    match self.dirty {
+                    match self.dirty() {
                         true => {Some( #op_name { #ops_impl })},
                         false => None
                     }
@@ -93,26 +74,6 @@ impl RundoStruct for syn::ItemStruct {
 
                 fn forward(&mut self, op: &Self::Op) {
                     #forward_impl
-                }
-            }
-        }
-    }
-
-    fn impl_ref_deref(&self) -> quote::Tokens {
-        let name = &self.ident;
-        let inner_name = self.inner_name();
-        quote!{
-            impl std::ops::Deref for #name {
-                type Target = #inner_name;
-                fn deref(&self) -> &#inner_name { &self.value }
-            }
-
-            impl std::ops::DerefMut for #name {
-                fn deref_mut(&mut self) -> &mut #inner_name {
-                        if !self.dirty {
-                        self.dirty = true;
-                    }
-                    &mut self.value
                 }
             }
         }
@@ -149,6 +110,7 @@ trait RundoFields {
     fn reset_method(&self) -> quote::Tokens;
     fn back_method(&self) -> quote::Tokens;
     fn forward_method(&self) -> quote::Tokens;
+    fn dirty_method(&self) -> quote::Tokens;
 }
 
 pub fn default_ty_impled(ty: &syn::Type) -> bool {
@@ -183,7 +145,6 @@ impl RundoFields for syn::Fields {
     fn op_def(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = field.ident.as_ref();
-            let ty = &field.ty;
             let ty = rundo_type_def(&field.ty);
             let op = quote! { <#ty as Rundo>::Op };
             let ops_type = quote!{ Option<#op>};
@@ -194,14 +155,26 @@ impl RundoFields for syn::Fields {
     fn op_method(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = &field.ident;
-            quote! { #ident: self.value.#ident.change_op(), }
+            quote! { #ident: self.#ident.change_op(), }
         })
+    }
+
+    fn dirty_method(&self) -> quote::Tokens {
+        let defs = named_filed_only!(self)
+            .named
+            .iter()
+            .map(|field| {
+                let ident = &field.ident;
+                quote! { self.#ident.dirty() }
+            })
+            .collect::<Vec<_>>();
+        quote!{ #(#defs) ||* }
     }
 
     fn reset_method(&self) -> quote::Tokens {
         fields_map(self, |field| {
             let ident = &field.ident;
-            quote! { self.value.#ident.reset();}
+            quote! { self.#ident.reset(); }
         })
     }
 
@@ -210,9 +183,9 @@ impl RundoFields for syn::Fields {
             let ident = &field.ident;
             quote! {
                 if let Some(ref op) = op.#ident {
-                    self.value.#ident.back(&op);
+                    self.#ident.back(&op);
                 }
-                self.dirty = false;
+                self.reset();
             }
         })
     }
@@ -222,9 +195,9 @@ impl RundoFields for syn::Fields {
             let ident = &field.ident;
             quote! {
                 if let Some(ref op) = op.#ident {
-                    self.value.#ident.forward(&op);
+                    self.#ident.forward(&op);
                 }
-                self.dirty = false;
+                self.reset();
             }
         })
     }

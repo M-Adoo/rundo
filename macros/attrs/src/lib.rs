@@ -22,21 +22,15 @@ pub fn rundo(args: TokenStream, input: TokenStream) -> TokenStream {
 
 fn impl_rundo_attrs(item: &syn::Item) -> quote::Tokens {
     if let &syn::Item::Struct(ref s) = item {
-        let inner_def = s.inner_struct_def();
         let op_def = s.op_struct_def();
         let struct_def = s.struct_def();
         let impl_rundo = s.impl_rundo();
-        let impl_ref_deref = s.impl_ref_deref();
         let literal_macro = s.literal_macro();
 
         quote! {
             #op_def
 
-            #inner_def
-
             #struct_def
-
-            #impl_ref_deref
 
             #impl_rundo
 

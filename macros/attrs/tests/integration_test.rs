@@ -13,17 +13,20 @@ struct Point {
   b: i32,
 }
 
+#[rundo]
+struct Embed {
+  point: Point,
+  c: f32,
+}
+
 #[test]
 fn test_simple() {
   let mut pt = Point! { a: 1, b: 2 };
   assert_eq!(*pt.a, 1);
   assert!(!pt.dirty());
 
-  {
-    let _a = &mut pt.a;
-  }
-  assert!(pt.dirty());
   *pt.a = 4;
+  assert!(pt.dirty());
   assert_eq!(*pt.a, 4);
 
   pt.change_op().expect("should have op here");
@@ -56,6 +59,26 @@ fn forward_back() {
   assert_eq!(*pt.a, 5);
   assert_eq!(*pt.b, 6);
   assert!(!pt.dirty());
+}
+
+#[test]
+fn emebed_struct() {
+  let mut embed = Embed! {point: Point!{a:1, b:1}, c: 1.0};
+  *embed.point.a = 2;
+  assert!(embed.dirty());
+  *embed.c = 2.0;
+
+  let op = embed.change_op().unwrap();
+
+  embed.back(&op);
+  assert_eq!(*embed.point.a, 1);
+  assert_eq!(*embed.point.b, 1);
+  assert_eq!(*embed.c, 1.0);
+
+  embed.forward(&op);
+  assert_eq!(*embed.point.a, 2);
+  assert_eq!(*embed.point.b, 1);
+  assert_eq!(*embed.c, 2.0);
 }
 
 mod wrap {

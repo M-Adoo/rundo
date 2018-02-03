@@ -115,11 +115,11 @@ where
 
     fn change_op(&self) -> Option<Self::Op> {
         match self.origin {
-            Some(ref ori) => Some(VtOp {
+            Some(ref ori) if ori != &self.value => Some(VtOp {
                 prev: ori.clone(),
                 curr: self.value.clone(),
             }),
-            None => None,
+            _ => None,
         }
     }
 

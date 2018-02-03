@@ -13,7 +13,6 @@ pub trait LiteralMacro {
 
 impl LiteralMacro for syn::ItemStruct {
     fn literal_macro(&self) -> quote::Tokens {
-        let inner_type = self.inner_name();
         let field_match = rundo_struct::fields_map(&self.fields, |field| {
             let ident = &field.ident;
             let ty = &field.ty;
@@ -41,10 +40,7 @@ impl LiteralMacro for syn::ItemStruct {
         let construct = |field_exp| {
             quote! {
                 #name {
-                    dirty: false,
-                    value: #inner_type {
                         $($id: #field_macro!(#field_exp)),*
-                    }
                 }
             }
         };
