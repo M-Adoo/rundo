@@ -1,4 +1,4 @@
-`//! Rundo is a redo / undo library for rust which can auto generate actions.
+//! Rundo is a redo / undo library for rust which can auto generate actions.
 //!
 //! Thanks for rust Procedural Macros, Rundo will be disign and implementation to zero-cost support undo-redo in Rust.
 //! Rundo dedicated to support undo/redo transparent for user code, it's should be used painless.
@@ -34,7 +34,7 @@
 //! // with the same shape, but support undo redo.
 //! // You can use it as same as before, but to literal construct
 //! // must use a same name macro replace.
-//! 
+//!
 //! fn main(){
 //!   let mut space = Workspace::new(Point! {x: 2.0, y: 2.0,});
 //!   {
