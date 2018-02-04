@@ -4,8 +4,8 @@
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
+extern crate rundo_types;
 extern crate syn;
-extern crate types;
 
 mod literal;
 mod rundo_struct;

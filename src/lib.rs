@@ -95,15 +95,15 @@
 #![feature(decl_macro)]
 
 #[doc(include = "../readme.md")]
-extern crate attrs;
-extern crate types;
+extern crate rundo_attrs;
+extern crate rundo_types;
 #[cfg(test)]
 mod test;
 
 pub mod workspace;
 
 pub mod prelude {
-    pub use attrs::*;
+    pub use rundo_attrs::*;
     pub use workspace::Workspace;
-    pub use types::prelude::*;
+    pub use rundo_types::prelude::*;
 }

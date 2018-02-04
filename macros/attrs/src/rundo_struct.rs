@@ -1,6 +1,6 @@
 use quote;
 use syn;
-use types::IMPLED_RUNDO;
+use rundo_types::IMPLED_RUNDO;
 
 pub fn prefix_ident(ident: &syn::Ident, prefix: &str) -> syn::Ident {
     let in_name = prefix.to_owned() + ident.as_ref();

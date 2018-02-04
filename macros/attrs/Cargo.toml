@@ -1,12 +1,22 @@
 [package]
-name = "attrs"
+name = "rundo_attrs"
 version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
+description = "macros lib by rundo"
+homepage = "https://github.com/M-Adoo/rundo"
+repository = "https://github.com/M-Adoo/rundo"
+documentation = "https://docs.rs/rundo_attrs"
+keywords = ["undo", "redo"]
+categories = ["Data structures", "Data control"]
+license = "MIT"
 
 [dependencies]
-types = {path = "../../types"}
-syn = { version ="*", features = ["full", "extra-traits"]}
-quote = "*"
+rundo_types = {path = "../../types", version="^0.1"}
+syn = { version ="^0.12.10", features = ["full", "extra-traits"]}
+quote = "^0.4.2"
+
+[badges]
+travis-ci = { repository = "M-Adoo/rundo", branch = "master" }
 
 [lib]
 proc-macro = true

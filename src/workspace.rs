@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
-pub use types::*;
-pub use attrs::*;
+pub use rundo_types::*;
+pub use rundo_attrs::*;
 
 #[derive(PartialEq, Debug)]
 pub enum WarkSpaceOp<T> {

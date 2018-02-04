@@ -1,7 +1,17 @@
 [package]
-name = "types"
+name = "rundo_types"
 version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
+description = "base undo redo types for Rundo"
+documentation = "https://docs.rs/rundo_types"
+homepage = "https://github.com/M-Adoo/rundo"
+repository = "https://github.com/M-Adoo/rundo"
+keywords = ["undo", "redo"]
+categories = ["Data structures", "Data control"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "M-Adoo/rundo", branch = "master" }
 
 [dependencies]
-difference = "2.0"
+difference = "^2.0"

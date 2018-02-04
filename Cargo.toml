@@ -2,9 +2,21 @@
 name = "rundo"
 version = "0.1.0"
 authors = ["Adoo <Adoo@outlook.com>"]
+description = "Rundo is a redo / undo library for rust which can auto generate undo op. Below is an example to use Rundo."
+documentation = "https://docs.rs/rundo"
+homepage = "https://github.com/M-Adoo/rundo"
+repository = "https://github.com/M-Adoo/rundo"
+readme = "readme.md"
+keywords = ["undo", "redo"]
+categories = ["Data structures", "Data control"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "M-Adoo/rundo", branch = "master" }
+
 
 [dependencies]
-attrs = { path="./macros/attrs" }
-types = { path="types" }
+rundo_attrs = { path="./macros/attrs",  version="^0.1" }
+rundo_types = { path="types",  version="^0.1"}
 
 [workspace]

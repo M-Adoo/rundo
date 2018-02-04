@@ -1,11 +1,11 @@
 #![feature(proc_macro)]
 #![feature(decl_macro)]
 
-extern crate attrs;
-extern crate types;
+extern crate rundo_attrs;
+extern crate rundo_types;
 
-use types::prelude::*;
-use attrs::rundo;
+use rundo_types::prelude::*;
+use rundo_attrs::rundo;
 
 #[rundo]
 struct Test {

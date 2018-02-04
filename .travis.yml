@@ -10,3 +10,19 @@ matrix:
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
+before_deploy:
+  - cargo login $CARGO_TOKEN
+deploy:
+  provider: script
+  script:
+    - cd types
+    - cargo package 
+    - cargo publish
+    - cd ../macros/attrs
+    - cargo package 
+    - cargo publish
+    - cd ../../
+    - cargo package 
+    - cargo publish
+  on:
+    tags: true

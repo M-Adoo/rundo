@@ -3,8 +3,8 @@
 
 #[cfg(test)]
 mod test {
-    use types::prelude::*;
-    use attrs::rundo;
+    use rundo_types::prelude::*;
+    use rundo_attrs::rundo;
     use workspace::Workspace;
 
     #[rundo]
