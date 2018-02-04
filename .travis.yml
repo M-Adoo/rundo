@@ -11,18 +11,12 @@ script:
   - cargo build --verbose --all
   - cargo test --verbose --all
 before_deploy:
+  - cargo doc
   - cargo login $CARGO_TOKEN
 deploy:
   provider: script
-  script:
-    - cd types
-    - cargo package 
-    - cargo publish
-    - cd ../macros/attrs
-    - cargo package 
-    - cargo publish
-    - cd ../../
-    - cargo package 
-    - cargo publish
+  script: scripts/deploy.sh
+
+  skip_cleanup: true
   on:
     tags: true

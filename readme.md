@@ -125,8 +125,6 @@ fn main(){
                                       //  +  change in this scope 
   }                                   // <+- generate a single op. 
                                       
-  
-
   // undo also work.
   space.undo();
   assert_eq!(*space.data.x, 2.0);
@@ -134,7 +132,7 @@ fn main(){
 ```
 After point lifetime over, all change will be captured and generate an undo operator.
 
-`begin_op` and `end_op` support nested use. This will work:
+`begin_op` and `end_op` support nested use. This will work:
 
 ```compile_fail
 space.begin_op();
@@ -148,4 +146,4 @@ space.end_op();
 space.end_op();
 
 ```
-All change will be collected by the outer most pair `begin_op/end_op` capture.
+All change will be collected by the outer most pair `begin_op end_op` capture.
