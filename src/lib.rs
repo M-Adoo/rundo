@@ -1,6 +1,3 @@
-#![feature(proc_macro)]
-#![feature(decl_macro)]
-
 //! # Rundo
 //!
 //! Rundo is a redo / undo library for rust which can atuo generate actions.
@@ -34,35 +31,30 @@
 //!     y: f32,
 //! }
 //!
-//! #[test]
-//! fn tmp() {
-//!     // Note here the macro `Point`, Rundo redefine your origin Point type
-//!     // with the same shape, but support undo redo.
-//!     // You can use it as same as before, but to literal construct
-//!     // must use a same name macro replace.
-//!     let space = Workspace::new(Point! {x: 2.0, y: 2.0,});
+//！ // Note here the macro `Point`, Rundo redefine your origin Point type
+//！ // with the same shape, but support undo redo.
+//！ // You can use it as same as before, but to literal construct
+//！ // must use a same name macro replace.
 //!
-//!     {
-//!         // generate a guard to auto collect a action.
-//!         let _guard = space.capture_op();
-//!         // get your point
-//!         let mut pt = space.borrow_data_mut();
-//!         *pt.x = 3.0;
-//!     }
-//!
-//!     // x was changed to 3.0
-//!     assert_eq!(*space.borrow_data().x, 3.0);
-//!
-//!     // x will undo to 2.0
-//!     space.undo();
-//!     assert_eq!(*space.borrow_data().x, 2.0);
-//!
-//!     // x will redo to 3.0
-//!     space.redo();
-//!     assert_eq!(*space.borrow_data().x, 3.0);
+//! fn main(){
+//!   let mut space = Workspace::new(Point! {x: 2.0, y: 2.0,});
+//!   {
+//!     // access data across get_mut will auto collect change action.
+//!     *space.get_mut().x = 3.0;
+//!   }
+//！  // x was changed to 3.0
+//！  assert_eq!(*space.borrow_data().x, 3.0);
+//！  // x will undo to 2.0
+//！  space.undo();
+//！  assert_eq!(*space.borrow_data().x, 2.0);
+//！  // x will redo to 3.0
+//！  space.redo();
+//！  assert_eq!(*space.borrow_data().x, 3.0);
 //! }
-//! # fn main() {}
 //! ```
+
+#![feature(proc_macro)]
+#![feature(decl_macro)]
 
 extern crate attrs;
 extern crate types;

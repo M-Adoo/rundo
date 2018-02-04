@@ -1,48 +1,57 @@
-use std::cell::{Ref, RefCell, RefMut};
+use std::ops::{Deref, DerefMut};
+
 pub use types::*;
 pub use attrs::*;
 
 #[derive(PartialEq, Debug)]
 pub enum WarkSpaceOp<T> {
     /// user Op means, user manaual called capture_op on workspace,
-    /// and this Op record all the changed between the OpGuard lifetime
+    /// and this Op record all the changed between the RefGuard lifetime
     UserOp(T),
-    /// Robot Op means, some data change occurs not in any OpGuard lifetime.
+    /// Robot Op means, some data change occurs not in any RefGuard lifetime.
     /// In mose case Robot Op come from server, or sync from other client change.
     /// An Robot Op will not become an individual undo/redo Op, but
     /// will be comsumed by the nearest UserOp, when do undo redo.
     RobotOp(T),
 }
 
-/// OpGuard is an help object to auto record op
-pub struct OpGuard<'a, T: 'static + Rundo> {
-    ws: &'a Workspace<T>,
+/// RefGuard is an help object to auto record op
+pub struct RefGuard<'a, T: 'static + Rundo> {
+    ws: &'a mut Workspace<T>,
 }
 
-impl<'a, T> Drop for OpGuard<'a, T>
+impl<'a, T> Drop for RefGuard<'a, T>
 where
     T: 'static + Rundo,
 {
     fn drop(&mut self) {
-        *self.ws.batch.borrow_mut() -= 1;
-        assert!(*self.ws.batch.borrow() >= 0, "stack batch should never less than zero!!!
-        some like you not always paired call begin_op and end_op, this always stand for a serious bug.");
-
-        if *self.ws.batch.borrow() == 0 {
-            let mut mut_root = self.ws.root.borrow_mut();
-            if let Some(op) = mut_root.change_op() {
-                mut_root.reset();
-                let mut stack = self.ws.stack.borrow_mut();
-                let curr = self.ws.iter.borrow().curr;
-                stack.drain(curr..);
-                stack.push((WarkSpaceOp::UserOp(op)));
-                *self.ws.user_ops_len.borrow_mut() += 1;
-                self.ws.iter.borrow_mut().curr += 1;
-            }
-        }
+        self.ws.end_op();
     }
 }
 
+impl<'a, T> Deref for RefGuard<'a, T>
+where
+    T: 'static + Rundo,
+{
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.ws.data
+    }
+}
+
+/// when user try to get a mut refercence, Rundo it will change the value later.
+impl<'a, T> DerefMut for RefGuard<'a, T>
+where
+    T: 'static + Rundo,
+{
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.ws.data
+    }
+}
+
+// todo implement deref and mutderef for refGuard
+
+#[doc(hidden)]
 pub struct SpaceIter {
     pub(crate) base: usize,
     pub(crate) curr: usize,
@@ -50,52 +59,65 @@ pub struct SpaceIter {
 
 /// Workspace is the data store in rundo.
 pub struct Workspace<T: Rundo + 'static> {
-    pub(crate) root: RefCell<T>,
-    pub(crate) stack: RefCell<Vec<WarkSpaceOp<T::Op>>>,
-    pub(crate) user_ops_len: RefCell<usize>,
-    pub(crate) batch: RefCell<i32>,
-    pub(crate) iter: RefCell<SpaceIter>,
+    pub data: T,
+    pub(crate) stack: Vec<WarkSpaceOp<T::Op>>,
+    pub(crate) user_ops_len: usize,
+    pub(crate) batch: i32,
+    pub(crate) iter: SpaceIter,
 }
 
 const STACK_DEFAULT_SIZE: usize = 128;
 
 impl<T: Rundo> Workspace<T> {
-    pub fn new(root: T) -> Self {
+    pub fn new(data: T) -> Self {
         return Workspace {
-            root: RefCell::new(root),
-            stack: RefCell::new(Vec::with_capacity(STACK_DEFAULT_SIZE)),
-            user_ops_len: RefCell::new(0),
-            batch: RefCell::new(0),
-            iter: RefCell::new(SpaceIter { base: 0, curr: 0 }),
+            data,
+            stack: Vec::with_capacity(STACK_DEFAULT_SIZE),
+            user_ops_len: 0,
+            batch: 0,
+            iter: SpaceIter { base: 0, curr: 0 },
         };
     }
 
-    pub fn borrow_data_mut(&self) -> RefMut<T> {
-        self.root.borrow_mut()
+    pub fn begin_op(&mut self) {
+        if self.batch == 0 {
+            self.data.reset();
+        }
+        self.batch += 1;
     }
 
-    pub fn borrow_data(&self) -> Ref<T> {
-        self.root.borrow()
-    }
+    pub fn end_op(&mut self) {
+        self.batch -= 1;
+        assert!(self.batch >= 0, "stack batch should never less than zero!!!
+        some like you not always paired call begin_op and end_op, this always stand for a serious bug.");
 
-    pub fn capture_op(&self) -> OpGuard<T> {
-        self.borrow_data_mut().reset();
-        *self.batch.borrow_mut() += 1;
-
-        OpGuard { ws: self }
-    }
-
-    /// halfway cancel the operator which not filished
-    pub fn rollback(&self) {
-        let mut data = self.borrow_data_mut();
-        if let Some(op) = data.change_op() {
-            data.back(&op);
+        if self.batch == 0 {
+            if let Some(op) = self.data.change_op() {
+                self.data.reset();
+                let curr = self.iter.curr;
+                self.stack.drain(curr..);
+                self.stack.push(WarkSpaceOp::UserOp(op));
+                self.user_ops_len += 1;
+                self.iter.curr += 1;
+            }
         }
     }
 
-    pub fn redo(&self) {
-        let curr_pos = self.iter.borrow().curr;
-        let stack = &self.stack.borrow()[curr_pos..];
+    pub fn get_mut(&mut self) -> RefGuard<T> {
+        self.begin_op();
+        RefGuard { ws: self }
+    }
+
+    /// halfway cancel the operator which not filished
+    pub fn rollback(&mut self) {
+        if let Some(op) = self.data.change_op() {
+            self.data.back(&op);
+        }
+    }
+
+    pub fn redo(&mut self) {
+        let curr_pos = self.iter.curr;
+        let stack = &self.stack[curr_pos..];
         let idx = stack.iter().position(|e| {
             if let &WarkSpaceOp::UserOp(ref _op) = e {
                 true
@@ -103,26 +125,28 @@ impl<T: Rundo> Workspace<T> {
                 false
             }
         });
-
+        let data = &mut self.data;
+        let iter = &mut self.iter;
+        let user_ops_len = &mut self.user_ops_len;
         if let Some(i) = idx {
             (0..i + 1).for_each(|i| {
                 let op = match stack[i] {
                     WarkSpaceOp::RobotOp(ref op) => op,
                     WarkSpaceOp::UserOp(ref op) => op,
                 };
-                self.root.borrow_mut().forward(&op);
-                self.iter.borrow_mut().curr += 1;
-                *self.user_ops_len.borrow_mut() += 1;
+                data.forward(&op);
+                iter.curr += 1;
+                *user_ops_len += 1;
             })
         }
     }
 
-    pub fn undo(&self) {
-        let curr_pos = self.iter.borrow().curr;
-        let stack = &self.stack.borrow()[..curr_pos];
+    pub fn undo(&mut self) {
+        let curr_pos = self.iter.curr;
 
         // stack top must be a user op, and use it as undo start.
         // find the last second user op as the undo end.
+        let stack = &self.stack[..curr_pos];
         let idx = stack.iter().rposition(|e| {
             if let &WarkSpaceOp::UserOp(ref _op) = e {
                 true
@@ -131,15 +155,18 @@ impl<T: Rundo> Workspace<T> {
             }
         });
 
+        let data = &mut self.data;
+        let iter = &mut self.iter;
+        let user_ops_len = &mut self.user_ops_len;
         if let Some(idx) = idx {
             (idx..stack.len()).rev().for_each(|i| {
                 let op = match stack[i] {
                     WarkSpaceOp::RobotOp(ref op) => op,
                     WarkSpaceOp::UserOp(ref op) => op,
                 };
-                self.root.borrow_mut().back(&op);
-                self.iter.borrow_mut().curr -= 1;
-                *self.user_ops_len.borrow_mut() -= 1;
+                data.back(&op);
+                iter.curr -= 1;
+                *user_ops_len -= 1;
             });
         };
     }
@@ -149,11 +176,11 @@ impl<T: Rundo> Workspace<T> {
     }
 
     pub fn ops_len(&self) -> usize {
-        *self.user_ops_len.borrow()
+        self.user_ops_len
     }
 
     pub fn robot_ops_len(&self) -> usize {
-        let stack_len = self.stack.borrow().len() - self.iter.borrow().base;
+        let stack_len = self.stack.len() - self.iter.base;
         stack_len - self.ops_len()
     }
 }

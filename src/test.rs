@@ -1,9 +1,8 @@
+#![feature(proc_macro)]
+#![feature(decl_macro)]
+
 #[cfg(test)]
 mod test {
-    #![feature(proc_macro)]
-    #![feature(decl_macro)]
-
-    use std;
     use types::prelude::*;
     use attrs::rundo;
     use workspace::Workspace;
@@ -19,144 +18,146 @@ mod test {
         Workspace::new(Point! { x: 0.0, y: 0.0 })
     }
 
-    fn action_modify(space: &Space, x: f32, y: f32) -> &Space {
-        let _guard = space.capture_op();
-        *space.root.borrow_mut().x = x;
-        *space.root.borrow_mut().y = y;
-
+    fn action_modify(space: &mut Space, x: f32, y: f32) -> &Space {
+        space.begin_op();
+        *space.data.x = x;
+        *space.data.y = y;
+        space.end_op();
         space
     }
 
     #[test]
     fn stack_len() {
-        let ws = new_space();
+        let mut ws = new_space();
 
         {
-            let mut root = ws.borrow_data_mut();
-            let x = root.x.as_mut();
-            *x = 5.0;
+            *ws.data.x = 5.0;
         }
 
-        action_modify(&ws, 1.0, 2.0);
+        action_modify(&mut ws, 1.0, 2.0);
 
-        assert_eq!(ws.stack.borrow().len(), 1);
+        assert_eq!(ws.stack.len(), 1);
         assert_eq!(ws.ops_len(), 1);
         assert_eq!(ws.robot_ops_len(), 0);
 
-        action_modify(&ws, 2.0, 3.0);
-        assert_eq!(ws.stack.borrow().len(), 2);
+        action_modify(&mut ws, 2.0, 3.0);
+        assert_eq!(ws.stack.len(), 2);
         assert_eq!(ws.robot_ops_len(), 0);
         assert_eq!(ws.ops_len(), 2);
     }
 
     #[test]
     fn nest_batch() {
-        let ws = new_space();
+        let mut ws = new_space();
         {
-            let _guard = ws.capture_op();
+            ws.begin_op();
             {
-                let _guard = ws.capture_op();
-                *ws.borrow_data_mut().x = 5.0;
-                assert_eq!(ws.ops_len(), 0);
+                // get_mut will auto capture op
+                let mut data = ws.get_mut();
+                *data.x = 5.0;
             }
-
-            *ws.borrow_data_mut().x = 6.0;
             assert_eq!(ws.ops_len(), 0);
+
+            *ws.data.x = 6.0;
+            assert_eq!(ws.ops_len(), 0);
+            ws.end_op();
         }
 
         assert_eq!(ws.ops_len(), 1);
-        assert_eq!(ws.iter.borrow().curr, 1);
+        assert_eq!(ws.iter.curr, 1);
     }
 
     #[test]
     fn rollback() {
-        let ws = new_space();
+        let mut ws = new_space();
         {
-            let _guard = ws.capture_op();
-            *ws.borrow_data_mut().x = 5.0;
+            ws.begin_op();
+            *ws.data.x = 5.0;
+            ws.end_op();
         }
 
         {
-            let _guard = ws.capture_op();
-            *ws.borrow_data_mut().x = 4.0;
+            ws.begin_op();
+            *ws.data.x = 4.0;
             ws.rollback();
-            assert!(!ws.borrow_data().dirty());
+            assert!(!ws.data.dirty());
+            ws.begin_op();
         }
 
-        assert_eq!(*ws.borrow_data().x, 5.0);
+        assert_eq!(*ws.data.x, 5.0);
         assert_eq!(ws.ops_len(), 1);
     }
 
     #[test]
     fn stack_overwrite() {
-        let ws = new_space();
-        action_modify(&ws, 1.0, 1.0);
-        action_modify(&ws, 2.0, 2.0);
-        action_modify(&ws, 3.0, 3.0);
-        assert_eq!(*ws.borrow_data().x, 3.0);
+        let mut ws = new_space();
+        action_modify(&mut ws, 1.0, 1.0);
+        action_modify(&mut ws, 2.0, 2.0);
+        action_modify(&mut ws, 3.0, 3.0);
+        assert_eq!(*ws.data.x, 3.0);
 
         ws.undo();
         ws.undo();
-        assert_eq!(*ws.borrow_data().x, 1.0);
-        action_modify(&ws, 4.0, 4.0);
+        assert_eq!(*ws.data.x, 1.0);
+        action_modify(&mut ws, 4.0, 4.0);
         assert_eq!(ws.ops_len(), 2);
 
         ws.redo();
-        assert_eq!(*ws.borrow_data().x, 4.0);
+        assert_eq!(*ws.data.x, 4.0);
 
         ws.undo();
-        assert_eq!(*ws.borrow_data().x, 1.0);
+        assert_eq!(*ws.data.x, 1.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().x, 0.0);
+        assert_eq!(*ws.data.x, 0.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().x, 0.0);
+        assert_eq!(*ws.data.x, 0.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().x, 0.0);
+        assert_eq!(*ws.data.x, 0.0);
 
+        println!("workspace ops is {:?}", ws.stack);
         ws.redo();
-        assert_eq!(*ws.borrow_data().x, 1.0);
+        assert_eq!(*ws.data.x, 1.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().x, 4.0);
+        assert_eq!(*ws.data.x, 4.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().x, 4.0);
+        assert_eq!(*ws.data.x, 4.0);
     }
 
     #[test]
     fn undo_redo() {
-        let ws = new_space();
+        let mut ws = new_space();
 
-        action_modify(&ws, 1.0, 1.0);
+        action_modify(&mut ws, 1.0, 1.0);
         assert_eq!(ws.ops_len(), 1);
         assert_eq!(ws.robot_ops_len(), 0);
 
-        action_modify(&ws, 2.0, 2.0);
+        action_modify(&mut ws, 2.0, 2.0);
         assert_eq!(ws.ops_len(), 2);
-        assert_eq!(*ws.borrow_data().y, 2.0);
+        assert_eq!(*ws.data.y, 2.0);
 
-        action_modify(&ws, 3.0, 3.0);
+        action_modify(&mut ws, 3.0, 3.0);
         assert_eq!(ws.ops_len(), 3);
-        assert_eq!(*ws.borrow_data().y, 3.0);
+        assert_eq!(*ws.data.y, 3.0);
 
         ws.undo();
-        assert_eq!(*ws.borrow_data().y, 2.0);
+        assert_eq!(*ws.data.y, 2.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().y, 1.0);
+        assert_eq!(*ws.data.y, 1.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().y, 2.0);
+        assert_eq!(*ws.data.y, 2.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().y, 1.0);
+        assert_eq!(*ws.data.y, 1.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().y, 0.0);
+        assert_eq!(*ws.data.y, 0.0);
         ws.undo();
-        assert_eq!(*ws.borrow_data().y, 0.0);
+        assert_eq!(*ws.data.y, 0.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().y, 1.0);
+        assert_eq!(*ws.data.y, 1.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().y, 2.0);
+        assert_eq!(*ws.data.y, 2.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().y, 3.0);
+        assert_eq!(*ws.data.y, 3.0);
         ws.redo();
-        assert_eq!(*ws.borrow_data().y, 3.0);
+        assert_eq!(*ws.data.y, 3.0);
     }
-
 }
