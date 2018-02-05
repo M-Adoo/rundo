@@ -17,8 +17,7 @@ before_deploy:
   - chmod +x ./scripts/deploy.sh
 deploy:
   provider: script
-  script: ./cripts/deploy.sh
-
+  script: ./scripts/deploy.sh
   skip_cleanup: true
   on:
     tags: true

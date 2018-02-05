@@ -132,7 +132,7 @@ fn main(){
 ```
 After point lifetime over, all change will be captured and generate an undo operator.
 
-`begin_op` and `end_op` support nested use. This will work:
+`begin_op` and `end_op` support nested use. This will work:
 
 ```compile_fail
 space.begin_op();
