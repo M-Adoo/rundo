@@ -1,4 +1,4 @@
-# Rundo
+﻿# Rundo
 
 [![Build Status](https://travis-ci.org/M-Adoo/rundo.svg?branch=master)](https://travis-ci.org/M-Adoo/rundo)
 
@@ -146,4 +146,4 @@ space.end_op();
 space.end_op();
 
 ```
-All change will be collected by the outer most pair `begin_op end_op` capture.
+All change will be collected by the outer most pair `begin_op/end_op` capture.
