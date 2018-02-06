@@ -1,6 +1,6 @@
 [package]
 name = "rundo_attrs"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Adoo <Adoo@outlook.com>"]
 description = "macros lib by rundo"
 homepage = "https://github.com/M-Adoo/rundo"
@@ -11,7 +11,7 @@ categories = ["Data structures", "Data control"]
 license = "MIT"
 
 [dependencies]
-rundo_types = {path = "../../types", version="^0.1"}
+rundo_types = {path = "../../types", version="^0.2"}
 syn = { version ="^0.12.10", features = ["full", "extra-traits"]}
 quote = "^0.4.2"
 
