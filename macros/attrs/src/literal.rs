@@ -4,8 +4,7 @@
 use quote;
 use syn;
 
-use rundo_struct::RundoStruct;
-use rundo_struct;
+use rundo_struct::*;
 
 pub trait LiteralMacro {
     fn literal_macro(&self) -> quote::Tokens;
@@ -13,11 +12,11 @@ pub trait LiteralMacro {
 
 impl LiteralMacro for syn::ItemStruct {
     fn literal_macro(&self) -> quote::Tokens {
-        let field_match = rundo_struct::fields_map(&self.fields, |field| {
+        let field_match = self.fields.named_filed_only().iter().map(|field| {
             let ident = &field.ident;
             let ty = &field.ty;
             let init_field = |init_expr| {
-                if rundo_struct::default_ty_impled(ty) {
+                if is_inner_rundo_type(field) {
                     quote!{ValueType::<#ty>::from(#init_expr)}
                 } else {
                     quote!{#init_expr}
@@ -36,7 +35,7 @@ impl LiteralMacro for syn::ItemStruct {
         });
 
         let name = self.ident;
-        let field_macro = rundo_struct::prefix_ident(&self.ident, "_field_");
+        let field_macro = prefix_ident(&self.ident, "_field_");
         let construct = |field_exp| {
             quote! {
                 #name {

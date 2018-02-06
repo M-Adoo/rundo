@@ -88,6 +88,39 @@
 //! assert_eq!(*space.data.y, 2.0);
 //!# }
 //! ```
+//!
+//!## #[rundo(skip)] skip this field
+//! if some field in your struct you don't want to undo/redo it, add #[rundo(skip)] before it.
+//!
+//! ```
+//! # #![feature(proc_macro)]
+//! # #![feature(decl_macro)]
+//! #
+//! # extern crate rundo;
+//! # use rundo::prelude::*;
+//! #
+//! # #[rundo]
+//! # struct Point {
+//! #    #[rundo(skip)]
+//! #    x: f32,
+//! #    y: f32,
+//! # }
+//! #
+//! # fn main() {
+//! let mut space = Workspace::new(Point! {x: 2.0, y: 2.0,});
+//!
+//! space.get_mut().x = 5.0;
+//! *space.get_mut().y = 6.0;
+//!
+//! space.undo();
+//!
+//! // x change will be not capture, undo will not occur on it.
+//! assert_eq!(space.data.x, 5.0);
+//! // but y is undo to 2.0
+//! assert_eq!(*space.data.y, 2.0);
+//!# }
+//! ```
+//! You can use
 //! [README]: https://github.com/M-Adoo/rundo#rundo
 
 #![feature(external_doc)]

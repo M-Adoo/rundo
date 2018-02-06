@@ -20,15 +20,15 @@
     - [x] auto batch op
     - [x] halfway rollback
 
-- [ ] support struct in struct
-- [ ] docs
+- [x] support struct in struct
+- [x] docs
 ## 0.2
 
-- [ ] support skip special struct field
+- [x] support skip special struct field
 - [ ] support generic
 - [ ] support struct attrs lifetime ...
-    - [ ] if user directly replace the nested struct, dirty chain will break, and how to generate current change op?
-    - [ ] RefCell will break dirty chain which depend on DerefMut
+- [x] if user directly replace the nested struct, dirty chain will break, and how to generate current change op?
+- [x] RefCell will break dirty chain which depend on DerefMut
 - [ ] support rebase
 - [ ] support ops zip
 - [ ] serde
