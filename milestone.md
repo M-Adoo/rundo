@@ -29,6 +29,4 @@
 - [ ] support struct attrs lifetime ...
 - [x] if user directly replace the nested struct, dirty chain will break, and how to generate current change op?
 - [x] RefCell will break dirty chain which depend on DerefMut
-- [ ] support rebase
 - [ ] support ops zip
-- [ ] serde
