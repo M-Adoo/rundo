@@ -18,5 +18,6 @@ travis-ci = { repository = "M-Adoo/rundo", branch = "master" }
 [dependencies]
 rundo_attrs = { path="./macros/attrs",  version="^0.2" }
 rundo_types = { path="types",  version="^0.2"}
+bson = "0.11"
 
 [workspace]

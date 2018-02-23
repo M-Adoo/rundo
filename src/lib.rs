@@ -127,10 +127,12 @@
 #![feature(proc_macro)]
 #![feature(decl_macro)]
 
+extern crate bson;
 #[doc(include = "../readme.md")]
 #[doc(include = "../docs/quickstart.md")]
 extern crate rundo_attrs;
 extern crate rundo_types;
+
 #[cfg(test)]
 mod test;
 

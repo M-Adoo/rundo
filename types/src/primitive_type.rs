@@ -29,7 +29,7 @@ where
     }
 }
 
-/// when user try to get a mut refercence, Rundo it will change the value later.
+/// when user try to get a mut refercence, Rundo know what changed in the later.
 impl<T> DerefMut for ValueType<T>
 where
     T: Clone + PartialEq,

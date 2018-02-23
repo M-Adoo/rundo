@@ -160,4 +160,14 @@ mod test {
         ws.redo();
         assert_eq!(*ws.data.y, 3.0);
     }
+
+    #[test]
+    fn next_ver() {
+        let mut ws = new_space();
+        ws.begin_op();
+        *ws.data.x = 5.0;
+        assert!(ws.next_ver().is_some());
+        ws.end_op();
+        assert!(ws.next_ver().is_none());
+    }
 }

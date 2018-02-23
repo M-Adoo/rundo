@@ -1,4 +1,5 @@
 use std::ops::{Deref, DerefMut};
+use bson::oid::ObjectId;
 
 pub use rundo_types::*;
 pub use rundo_attrs::*;
@@ -7,12 +8,12 @@ pub use rundo_attrs::*;
 pub enum WarkSpaceOp<T> {
     /// user Op means, user manaual called capture_op on workspace,
     /// and this Op record all the changed between the RefGuard lifetime
-    UserOp(T),
+    UserOp((ObjectId, T)),
     /// Robot Op means, some data change occurs not in any RefGuard lifetime.
-    /// In mose case Robot Op come from server, or sync from other client change.
+    /// In most case Robot Op come from server, or sync from other client change.
     /// An Robot Op will not become an individual undo/redo Op, but
     /// will be comsumed by the nearest UserOp, when do undo redo.
-    RobotOp(T),
+    RobotOp((ObjectId, T)),
 }
 
 /// RefGuard is an help object to auto record op
@@ -39,7 +40,6 @@ where
     }
 }
 
-/// when user try to get a mut refercence, Rundo it will change the value later.
 impl<'a, T> DerefMut for RefGuard<'a, T>
 where
     T: 'static + Rundo,
@@ -48,8 +48,6 @@ where
         &mut self.ws.data
     }
 }
-
-// todo implement deref and mutderef for refGuard
 
 #[doc(hidden)]
 pub struct SpaceIter {
@@ -63,6 +61,7 @@ pub struct Workspace<T: Rundo + 'static> {
     pub(crate) stack: Vec<WarkSpaceOp<T::Op>>,
     pub(crate) user_ops_len: usize,
     pub(crate) batch: i32,
+    pub(crate) version: Option<ObjectId>,
     pub(crate) iter: SpaceIter,
 }
 
@@ -75,12 +74,15 @@ impl<T: Rundo> Workspace<T> {
             stack: Vec::with_capacity(STACK_DEFAULT_SIZE),
             user_ops_len: 0,
             batch: 0,
+            version: None,
             iter: SpaceIter { base: 0, curr: 0 },
         };
     }
 
     pub fn begin_op(&mut self) {
         if self.batch == 0 {
+            let oid = ObjectId::new().expect("rundo generate version objectid failed");
+            self.version = Some(oid);
             self.data.reset();
         }
         self.batch += 1;
@@ -96,7 +98,11 @@ impl<T: Rundo> Workspace<T> {
                 self.data.reset();
                 let curr = self.iter.curr;
                 self.stack.drain(curr..);
-                self.stack.push(WarkSpaceOp::UserOp(op));
+                {
+                    let oid = self.version.as_ref().unwrap();
+                    self.stack.push(WarkSpaceOp::UserOp((oid.clone(), op)));
+                }
+                self.version = None;
                 self.user_ops_len += 1;
                 self.iter.curr += 1;
             }
@@ -134,7 +140,7 @@ impl<T: Rundo> Workspace<T> {
                     WarkSpaceOp::RobotOp(ref op) => op,
                     WarkSpaceOp::UserOp(ref op) => op,
                 };
-                data.forward(&op);
+                data.forward(&op.1);
                 iter.curr += 1;
                 *user_ops_len += 1;
             })
@@ -164,7 +170,7 @@ impl<T: Rundo> Workspace<T> {
                     WarkSpaceOp::RobotOp(ref op) => op,
                     WarkSpaceOp::UserOp(ref op) => op,
                 };
-                data.back(&op);
+                data.back(&op.1);
                 iter.curr -= 1;
                 *user_ops_len -= 1;
             });
@@ -182,5 +188,9 @@ impl<T: Rundo> Workspace<T> {
     pub fn robot_ops_len(&self) -> usize {
         let stack_len = self.stack.len() - self.iter.base;
         stack_len - self.ops_len()
+    }
+
+    pub fn next_ver(&self) -> Option<ObjectId> {
+        return self.version.clone();
     }
 }
