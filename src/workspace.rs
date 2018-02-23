@@ -5,7 +5,7 @@ pub use rundo_types::*;
 pub use rundo_attrs::*;
 
 #[derive(PartialEq, Debug)]
-pub enum WarkSpaceOp<T> {
+pub enum WorkSpaceOp<T> {
     /// user Op means, user manaual called capture_op on workspace,
     /// and this Op record all the changed between the RefGuard lifetime
     UserOp((ObjectId, T)),
@@ -58,7 +58,7 @@ pub struct SpaceIter {
 /// Workspace is the data store in rundo.
 pub struct Workspace<T: Rundo + 'static> {
     pub data: T,
-    pub(crate) stack: Vec<WarkSpaceOp<T::Op>>,
+    pub(crate) stack: Vec<WorkSpaceOp<T::Op>>,
     pub(crate) user_ops_len: usize,
     pub(crate) batch: i32,
     pub(crate) version: Option<ObjectId>,
@@ -100,7 +100,7 @@ impl<T: Rundo> Workspace<T> {
                 self.stack.drain(curr..);
                 {
                     let oid = self.version.as_ref().unwrap();
-                    self.stack.push(WarkSpaceOp::UserOp((oid.clone(), op)));
+                    self.stack.push(WorkSpaceOp::UserOp((oid.clone(), op)));
                 }
                 self.version = None;
                 self.user_ops_len += 1;
@@ -125,7 +125,7 @@ impl<T: Rundo> Workspace<T> {
         let curr_pos = self.iter.curr;
         let stack = &self.stack[curr_pos..];
         let idx = stack.iter().position(|e| {
-            if let &WarkSpaceOp::UserOp(ref _op) = e {
+            if let &WorkSpaceOp::UserOp(ref _op) = e {
                 true
             } else {
                 false
@@ -137,8 +137,8 @@ impl<T: Rundo> Workspace<T> {
         if let Some(i) = idx {
             (0..i + 1).for_each(|i| {
                 let op = match stack[i] {
-                    WarkSpaceOp::RobotOp(ref op) => op,
-                    WarkSpaceOp::UserOp(ref op) => op,
+                    WorkSpaceOp::RobotOp(ref op) => op,
+                    WorkSpaceOp::UserOp(ref op) => op,
                 };
                 data.forward(&op.1);
                 iter.curr += 1;
@@ -154,7 +154,7 @@ impl<T: Rundo> Workspace<T> {
         // find the last second user op as the undo end.
         let stack = &self.stack[..curr_pos];
         let idx = stack.iter().rposition(|e| {
-            if let &WarkSpaceOp::UserOp(ref _op) = e {
+            if let &WorkSpaceOp::UserOp(ref _op) = e {
                 true
             } else {
                 false
@@ -167,8 +167,8 @@ impl<T: Rundo> Workspace<T> {
         if let Some(idx) = idx {
             (idx..stack.len()).rev().for_each(|i| {
                 let op = match stack[i] {
-                    WarkSpaceOp::RobotOp(ref op) => op,
-                    WarkSpaceOp::UserOp(ref op) => op,
+                    WorkSpaceOp::RobotOp(ref op) => op,
+                    WorkSpaceOp::UserOp(ref op) => op,
                 };
                 data.back(&op.1);
                 iter.curr -= 1;
