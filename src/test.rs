@@ -162,6 +162,39 @@ mod test {
     }
 
     #[test]
+    fn skip_to() {
+        let mut ws = new_space();
+        action_modify(&mut ws, 1.0, 1.0);
+        let v1 = ws.top_ver().unwrap().clone();
+
+        action_modify(&mut ws, 2.0, 2.0);
+        let v2 = ws.top_ver().unwrap().clone();
+
+        action_modify(&mut ws, 3.0, 3.0);
+        let v3 = ws.top_ver().unwrap().clone();
+
+        action_modify(&mut ws, 4.0, 4.0);
+        let v4 = ws.top_ver().unwrap().clone();
+
+        ws.undo_to(&v1);
+        println!("v1 : curr is {:?} : {:?}", v1, ws.top_ver());
+
+        assert_eq!(*ws.data.x, 1.0);
+        assert_eq!(*ws.data.x, 1.0);
+
+        ws.redo_to(&v4);
+        assert_eq!(*ws.data.x, 4.0);
+        assert_eq!(*ws.data.x, 4.0);
+
+        ws.skip_to(&v2);
+        assert_eq!(*ws.data.x, 2.0);
+        assert_eq!(*ws.data.x, 2.0);
+        ws.skip_to(&v3);
+        assert_eq!(*ws.data.x, 3.0);
+        assert_eq!(*ws.data.x, 3.0);
+    }
+
+    #[test]
     fn next_ver() {
         let mut ws = new_space();
         ws.begin_op();

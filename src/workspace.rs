@@ -1,4 +1,5 @@
 use std::ops::{Deref, DerefMut};
+use std::num::Wrapping;
 use bson::oid::ObjectId;
 
 pub use rundo_types::*;
@@ -17,18 +18,30 @@ pub enum WorkSpaceOp<T> {
 }
 
 impl<T> WorkSpaceOp<T> {
-    fn version(&self) -> &ObjectId {
+    pub fn version(&self) -> &ObjectId {
         match self {
             &WorkSpaceOp::RobotOp(ref op) => &op.0,
             &WorkSpaceOp::UserOp(ref op) => &op.0,
         }
     }
 
-    fn op(&self) -> &T {
+    pub fn op(&self) -> &T {
         match self {
             &WorkSpaceOp::RobotOp(ref op) => &op.1,
             &WorkSpaceOp::UserOp(ref op) => &op.1,
         }
+    }
+
+    pub fn is_user_op(&self) -> bool {
+        if let &WorkSpaceOp::UserOp(ref _op) = self {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_robot_op(&self) -> bool {
+        !self.is_user_op()
     }
 }
 
@@ -137,50 +150,44 @@ impl<T: Rundo> Workspace<T> {
         }
     }
 
-    pub fn redo(&mut self) {
+    fn redo_by<F>(&mut self, f: F) -> Option<usize>
+    where
+        F: FnMut(&WorkSpaceOp<T::Op>) -> bool,
+    {
         let curr_pos = self.iter.curr;
         let stack = &self.stack[curr_pos..];
-        let idx = stack.iter().position(|e| {
-            if let &WorkSpaceOp::UserOp(ref _op) = e {
-                true
-            } else {
-                false
-            }
-        });
+        let idx = stack.iter().position(f);
+
         let data = &mut self.data;
         let iter = &mut self.iter;
         let user_ops_len = &mut self.user_ops_len;
         if let Some(i) = idx {
             (0..i + 1).for_each(|i| {
-                let op = match stack[i] {
-                    WorkSpaceOp::RobotOp(ref op) => op,
-                    WorkSpaceOp::UserOp(ref op) => op,
-                };
-                data.forward(&op.1);
+                let op = stack[i].op();
+                data.forward(&op);
                 iter.curr += 1;
                 *user_ops_len += 1;
             })
-        }
+        };
+
+        idx
     }
 
-    pub fn undo(&mut self) {
+    fn undo_by<F>(&mut self, f: F, boundary_open: bool) -> Option<usize>
+    where
+        F: FnMut(&WorkSpaceOp<T::Op>) -> bool,
+    {
         let curr_pos = self.iter.curr;
-
         // stack top must be a user op, and use it as undo start.
         // find the last second user op as the undo end.
         let stack = &self.stack[..curr_pos];
-        let idx = stack.iter().rposition(|e| {
-            if let &WorkSpaceOp::UserOp(ref _op) = e {
-                true
-            } else {
-                false
-            }
-        });
+        let idx = stack.iter().rposition(f);
 
         let data = &mut self.data;
         let iter = &mut self.iter;
         let user_ops_len = &mut self.user_ops_len;
         if let Some(idx) = idx {
+            let idx = if boundary_open { idx + 1 } else { idx };
             (idx..stack.len()).rev().for_each(|i| {
                 let op = stack[i].op();
                 data.back(&op);
@@ -188,6 +195,37 @@ impl<T: Rundo> Workspace<T> {
                 *user_ops_len -= 1;
             });
         };
+
+        idx
+    }
+
+    pub fn redo(&mut self) -> Option<usize> {
+        self.redo_by(|e| e.is_user_op())
+    }
+
+    pub fn undo(&mut self) -> Option<usize> {
+        self.undo_by(|e| e.is_user_op(), false)
+    }
+
+    /// forward to the special version, if `ver` is not front of
+    /// current version nothing will occur.
+    /// when you cann't detect the version back or front current version
+    /// use `skip_to`
+    pub fn redo_to(&mut self, ver: &ObjectId) -> Option<usize> {
+        self.redo_by(|op| op.version() == ver)
+    }
+
+    /// back to a special version, if `ver` is not back of
+    /// current version nothing will occur.
+    /// when you cann't detect the version back or front current version
+    /// use `skip_to`
+    pub fn undo_to(&mut self, ver: &ObjectId) -> Option<usize> {
+        self.undo_by(|op| op.version() == ver, true)
+    }
+
+    /// skip to an arbitary version
+    pub fn skip_to(&mut self, ver: &ObjectId) -> Option<usize> {
+        self.undo_to(ver).or_else(|| self.redo_to(ver))
     }
 
     pub fn zip() {
@@ -208,7 +246,7 @@ impl<T: Rundo> Workspace<T> {
     }
 
     pub fn top_ver(&self) -> Option<&ObjectId> {
-        let top = self.iter.curr;
-        self.stack.get(top - 1).map(|op| op.version())
+        let top = Wrapping(self.iter.curr) - Wrapping(1);
+        self.stack.get(top.0).map(|op| op.version())
     }
 }
