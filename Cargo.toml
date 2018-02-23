@@ -1,6 +1,6 @@
 [package]
 name = "rundo"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Adoo <Adoo@outlook.com>"]
 description = "Rundo is a redo / undo library for rust which can auto generate undo op. Below is an example to use Rundo."
 documentation = "https://docs.rs/rundo"
