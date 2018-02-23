@@ -8,5 +8,5 @@ cargo package
 cargo publish
 echo "deploy rundo"
 cd ../../
-cargo package 
-cargo publish
+cargo package --allow-dirty
+cargo publish --allow-dirty
