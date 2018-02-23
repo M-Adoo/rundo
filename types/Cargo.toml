@@ -1,6 +1,6 @@
 [package]
 name = "rundo_types"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Adoo <Adoo@outlook.com>"]
 description = "base undo redo types for Rundo"
 documentation = "https://docs.rs/rundo_types"
