@@ -16,6 +16,22 @@ pub enum WorkSpaceOp<T> {
     RobotOp((ObjectId, T)),
 }
 
+impl<T> WorkSpaceOp<T> {
+    fn version(&self) -> &ObjectId {
+        match self {
+            &WorkSpaceOp::RobotOp(ref op) => &op.0,
+            &WorkSpaceOp::UserOp(ref op) => &op.0,
+        }
+    }
+
+    fn op(&self) -> &T {
+        match self {
+            &WorkSpaceOp::RobotOp(ref op) => &op.1,
+            &WorkSpaceOp::UserOp(ref op) => &op.1,
+        }
+    }
+}
+
 /// RefGuard is an help object to auto record op
 pub struct RefGuard<'a, T: 'static + Rundo> {
     ws: &'a mut Workspace<T>,
@@ -166,11 +182,8 @@ impl<T: Rundo> Workspace<T> {
         let user_ops_len = &mut self.user_ops_len;
         if let Some(idx) = idx {
             (idx..stack.len()).rev().for_each(|i| {
-                let op = match stack[i] {
-                    WorkSpaceOp::RobotOp(ref op) => op,
-                    WorkSpaceOp::UserOp(ref op) => op,
-                };
-                data.back(&op.1);
+                let op = stack[i].op();
+                data.back(&op);
                 iter.curr -= 1;
                 *user_ops_len -= 1;
             });
@@ -190,7 +203,12 @@ impl<T: Rundo> Workspace<T> {
         stack_len - self.ops_len()
     }
 
-    pub fn next_ver(&self) -> Option<ObjectId> {
-        return self.version.clone();
+    pub fn next_ver(&self) -> Option<&ObjectId> {
+        return self.version.as_ref();
+    }
+
+    pub fn top_ver(&self) -> Option<&ObjectId> {
+        let top = self.iter.curr;
+        self.stack.get(top - 1).map(|op| op.version())
     }
 }

@@ -170,4 +170,17 @@ mod test {
         ws.end_op();
         assert!(ws.next_ver().is_none());
     }
+
+    #[test]
+    fn top_ver() {
+        let mut ws = new_space();
+
+        action_modify(&mut ws, 1.0, 1.0);
+        let v1 = ws.top_ver().unwrap().clone();
+        action_modify(&mut ws, 2.0, 2.0);
+        let v2 = ws.top_ver().unwrap().clone();
+        assert_ne!(v1, v2);
+        ws.undo();
+        assert_eq!(&v1, ws.top_ver().unwrap());
+    }
 }
