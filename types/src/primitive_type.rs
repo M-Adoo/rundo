@@ -1,8 +1,8 @@
-use std::ops::{Deref, DerefMut};
-use std::convert::From;
 use std::cmp::PartialEq;
+use std::convert::From;
 use std::convert::{AsMut, AsRef};
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 
 use super::Rundo;
 
@@ -113,7 +113,7 @@ where
         self.origin = None;
     }
 
-    fn change_op(&self) -> Option<Self::Op> {
+    fn change_op(&mut self) -> Option<Self::Op> {
         match self.origin {
             Some(ref ori) if ori != &self.value => Some(VtOp {
                 prev: ori.clone(),
@@ -141,36 +141,34 @@ mod tests {
     use super::*;
 
     macro_rules! type_test {
-        ($init: expr, $new:expr) => {
-            {
-                let mut leaf = ValueType::from($init.clone());
-                assert!(!leaf.dirty());
+        ($init:expr, $new:expr) => {{
+            let mut leaf = ValueType::from($init.clone());
+            assert!(!leaf.dirty());
 
-                *leaf = $new.clone();
-                assert_eq!(leaf.value, $new.clone());
-                assert_eq!(leaf.origin, Some($init.clone()));
-                assert!(leaf.dirty());
+            *leaf = $new.clone();
+            assert_eq!(leaf.value, $new.clone());
+            assert_eq!(leaf.origin, Some($init.clone()));
+            assert!(leaf.dirty());
 
-                let op = leaf.change_op().expect("should have op here");
-                assert_eq!(op.prev, $init.clone());
-                assert_eq!(op.curr, $new.clone());
+            let op = leaf.change_op().expect("should have op here");
+            assert_eq!(op.prev, $init.clone());
+            assert_eq!(op.curr, $new.clone());
 
-                leaf.reset();
-                assert!(!leaf.dirty());
-                assert!(leaf.change_op().is_none());
+            leaf.reset();
+            assert!(!leaf.dirty());
+            assert!(leaf.change_op().is_none());
 
-                // test back forward
-                *leaf = $new.clone();
-                leaf.back(&op);
-                assert_eq!(leaf.value, $init.clone());
-                assert!(!leaf.dirty());
+            // test back forward
+            *leaf = $new.clone();
+            leaf.back(&op);
+            assert_eq!(leaf.value, $init.clone());
+            assert!(!leaf.dirty());
 
-                assert_eq!(leaf.value, $init.clone());
-                leaf.forward(&op);
-                assert_eq!(leaf.value, $new.clone());
-                assert!(!leaf.dirty());
-            }
-        }
+            assert_eq!(leaf.value, $init.clone());
+            leaf.forward(&op);
+            assert_eq!(leaf.value, $new.clone());
+            assert!(!leaf.dirty());
+        }};
     }
 
     #[test]

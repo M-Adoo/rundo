@@ -1,11 +1,11 @@
 use quote;
-use syn;
 use rundo_types::IMPLED_RUNDO;
-use syn::token::Comma;
-use syn::punctuated::Punctuated;
-use syn::{Field, Fields};
-use syn::NestedMeta::Meta;
+use syn;
 use syn::Meta::{List, Word};
+use syn::NestedMeta::Meta;
+use syn::punctuated::Punctuated;
+use syn::token::Comma;
+use syn::{Field, Fields};
 
 pub fn prefix_ident(ident: &syn::Ident, prefix: &str) -> syn::Ident {
     let in_name = prefix.to_owned() + ident.as_ref();
@@ -66,7 +66,7 @@ impl RundoStruct for syn::ItemStruct {
                     #reset_impl
                 }
 
-                fn change_op(&self)-> Option<#op_name> {
+                fn change_op(&mut self)-> Option<#op_name> {
                     match self.dirty() {
                         true => {Some( #op_name { #ops_impl })},
                         false => None

@@ -4,9 +4,9 @@ pub mod primitive_type;
 pub mod string_type;
 
 pub mod prelude {
+    pub use Rundo;
     pub use primitive_type::*;
     pub use string_type::*;
-    pub use Rundo;
 }
 
 pub const IMPLED_RUNDO: [&str; 15] = [
@@ -22,7 +22,7 @@ pub trait Rundo {
     /// if this node has been changed between from the last step to current.
     fn dirty(&self) -> bool;
     /// Use Op to describe the change infos.
-    fn change_op(&self) -> Option<Self::Op>;
+    fn change_op(&mut self) -> Option<Self::Op>;
     /// Reset the node change state which mean changes has been record by workspace,
     /// or changes will be ignore.
     fn reset(&mut self);

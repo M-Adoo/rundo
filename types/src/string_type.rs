@@ -1,7 +1,7 @@
-use std;
 use Rundo;
-use primitive_type::ValueType;
 use difference::{Changeset, Difference};
+use primitive_type::ValueType;
+use std;
 #[derive(PartialEq, Debug)]
 pub enum StrOP {
   Ins {
@@ -30,7 +30,7 @@ impl Rundo for ValueType<String> {
     self.origin = None;
   }
 
-  fn change_op(&self) -> Option<Self::Op> {
+  fn change_op(&mut self) -> Option<Self::Op> {
     self
       .origin
       .as_ref()
