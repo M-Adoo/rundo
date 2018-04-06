@@ -11,7 +11,7 @@ categories = ["Data structures", "Data control"]
 license = "MIT"
 
 [dependencies]
-rundo_types = {path = "../../types", version="^0.3"}
+rundo_types = {path = "../../types", version="^0.4"}
 syn = { version ="^0.12.10", features = ["full", "extra-traits"]}
 quote = "^0.4.2"
 
